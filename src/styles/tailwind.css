@@ -1,0 +1,190 @@
+@layer base {
+  :root {
+    color-scheme: dark;
+
+    /* App tokens (default = dark) */
+    --app-bg: #020617; /* slate-950 */
+    --app-fg: #f8fafc; /* slate-50 */
+
+    --panel-bg: rgba(15, 23, 42, 0.7); /* slate-900-ish */
+    --sidebar-bg: rgba(2, 6, 23, 0.8);
+    --sidebar-overlay-bg: rgba(2, 6, 23, 0.95);
+
+    --border-color: #1f2937; /* slate-800-ish */
+    --hover-bg: #1e293b; /* slate-800 */
+
+    --muted-fg: #94a3b8; /* slate-400 */
+    --muted-fg-2: #cbd5e1; /* slate-300-ish */
+
+    --input-bg: #0f172a; /* slate-900 */
+    --input-fg: #f8fafc; /* slate-50 */
+    --input-border: #334155; /* slate-700-ish */
+
+    --ring-offset: var(--app-bg);
+  }
+
+  :root[data-theme='light'] {
+    color-scheme: light;
+
+    --app-bg: #f8fafc; /* slate-50 */
+    --app-fg: #0f172a; /* slate-900-ish */
+
+    --panel-bg: rgba(255, 255, 255, 0.7);
+    --sidebar-bg: rgba(248, 250, 252, 0.95);
+    --sidebar-overlay-bg: rgba(248, 250, 252, 0.98);
+
+    --border-color: #e2e8f0; /* slate-200 */
+    --hover-bg: #e2e8f0;
+
+    --muted-fg: #64748b; /* slate-500-ish */
+    --muted-fg-2: #475569; /* slate-600-ish */
+
+    --input-bg: #ffffff;
+    --input-fg: #0f172a;
+    --input-border: #cbd5e1;
+
+    --ring-offset: var(--app-bg);
+  }
+
+  body {
+    background-color: var(--app-bg);
+    color: var(--app-fg);
+  }
+
+  /* Fallback: some pages still use fixed Tailwind slate classes. */
+  :root[data-theme='light'] .bg-slate-950 {
+    background-color: var(--app-bg) !important;
+  }
+
+  :root[data-theme='light'] .bg-slate-950\/80 {
+    background-color: rgba(248, 250, 252, 0.85) !important;
+  }
+
+  :root[data-theme='light'] .text-slate-50 {
+    color: var(--app-fg) !important;
+  }
+
+  :root[data-theme='light'] .text-slate-400 {
+    color: var(--muted-fg) !important;
+  }
+
+  :root[data-theme='light'] .text-slate-200 {
+    color: var(--app-fg) !important;
+  }
+
+  :root[data-theme='light'] .hover\:text-slate-200:hover {
+    color: var(--app-fg) !important;
+  }
+
+  :root[data-theme='light'] .text-slate-100 {
+    color: var(--app-fg) !important;
+  }
+
+  :root[data-theme='light'] .hover\:text-slate-100:hover {
+    color: var(--app-fg) !important;
+  }
+
+  :root[data-theme='light'] .text-slate-500 {
+    color: var(--muted-fg-2) !important;
+  }
+
+  :root[data-theme='light'] .text-slate-300 {
+    color: var(--muted-fg-2) !important;
+  }
+
+  :root[data-theme='light'] .border-slate-800 {
+    border-color: var(--border-color) !important;
+  }
+
+  :root[data-theme='light'] .border-slate-700 {
+    border-color: var(--input-border) !important;
+  }
+
+  :root[data-theme='light'] .border-slate-600 {
+    border-color: var(--input-border) !important;
+  }
+
+  :root[data-theme='light'] .bg-slate-800 {
+    background-color: var(--input-bg) !important;
+  }
+
+  :root[data-theme='light'] .bg-slate-700 {
+    background-color: var(--hover-bg) !important;
+  }
+
+  :root[data-theme='light'] .bg-slate-700\/50 {
+    background-color: rgba(226, 232, 240, 0.5) !important;
+  }
+
+  :root[data-theme='light'] .bg-slate-900 {
+    background-color: var(--input-bg) !important;
+  }
+
+  /* Variantes con alpha (muy usadas en "readOnly" o fondos translúcidos) */
+  :root[data-theme='light'] .bg-slate-900\/80 {
+    background-color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  :root[data-theme='light'] .bg-slate-900\/70 {
+    background-color: rgba(255, 255, 255, 0.80) !important;
+  }
+
+  :root[data-theme='light'] .bg-slate-900\/50 {
+    background-color: rgba(255, 255, 255, 0.70) !important;
+  }
+
+  :root[data-theme='light'] .bg-slate-800\/50 {
+    background-color: rgba(226, 232, 240, 0.70) !important;
+  }
+
+  :root[data-theme='light'] .bg-slate-600\/30 {
+    background-color: rgba(226, 232, 240, 0.35) !important;
+  }
+
+  :root[data-theme='light'] .bg-slate-500\/10 {
+    background-color: rgba(226, 232, 240, 0.65) !important;
+  }
+
+  /* Danger/rojos: mejorar contraste en modo light */
+  :root[data-theme='light'] .text-red-400 {
+    color: #e11d48 !important; /* red-600 */
+  }
+
+  :root[data-theme='light'] .text-red-300 {
+    color: #e11d48 !important;
+  }
+
+  :root[data-theme='light'] .hover\:text-red-300:hover {
+    color: #e11d48 !important;
+  }
+
+  :root[data-theme='light'] .bg-red-900\/40 {
+    background-color: rgba(225, 29, 72, 0.20) !important;
+  }
+
+  :root[data-theme='light'] .hover\:bg-red-950\/40:hover {
+    background-color: rgba(225, 29, 72, 0.20) !important;
+  }
+
+  /* Hover overrides (Tailwind generates escaped class names like hover\:bg-slate-800:hover) */
+  :root[data-theme='light'] .hover\:bg-slate-800:hover {
+    background-color: var(--hover-bg) !important;
+  }
+
+  :root[data-theme='light'] .hover\:bg-slate-700:hover {
+    background-color: var(--hover-bg) !important;
+  }
+
+  :root[data-theme='light'] .hover\:bg-slate-800\/50:hover {
+    background-color: rgba(226, 232, 240, 0.5) !important;
+  }
+
+  :root[data-theme='light'] .hover\:bg-slate-500:hover {
+    background-color: var(--hover-bg) !important;
+  }
+
+  :root[data-theme='light'] .border-l-slate-500 {
+    border-left-color: var(--border-color) !important;
+  }
+}
+
