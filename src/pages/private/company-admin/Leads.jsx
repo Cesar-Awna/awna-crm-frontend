@@ -1,44 +1,56 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../../components/Sidebar.jsx';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx';
 import { Button } from '../../../components/ui/button.jsx';
 import LeadsService from '../../../services/Leads.js';
-import FunnelStagesService from '../../../services/FunnelStages.js';
 import UsersService from '../../../services/Users.js';
 import BusinessUnitsService from '../../../services/BusinessUnits.js';
+import { LEAD_STATUSES, getStatusLabel } from '../../../lib/leadFormMappers.js';
+import { usePagination } from '../../../hooks/usePagination.js';
+import PaginationControls from '../../../components/PaginationControls.jsx';
+
+const getLeadField = (lead, key) => lead?.fields?.[key] ?? lead?.[key] ?? '—';
+
+const STATUS_BADGE = {
+  NUEVO: 'bg-sky-500/20 text-sky-300',
+  DATO_ERRADO: 'bg-red-500/20 text-red-300',
+  CONTACTADO: 'bg-blue-500/20 text-blue-300',
+  INTERESADO: 'bg-violet-500/20 text-violet-300',
+  COTIZACION_ENVIADA: 'bg-amber-500/20 text-amber-300',
+  EN_SEGUIMIENTO: 'bg-orange-500/20 text-orange-300',
+  CERRADO_GANADO: 'bg-emerald-500/20 text-emerald-300',
+  CERRADO_PERDIDO: 'bg-rose-500/20 text-rose-300',
+};
 
 const AdminLeads = () => {
   const navigate = useNavigate();
   const [leads, setLeads] = useState([]);
   const [loadingLeads, setLoadingLeads] = useState(true);
-  const [leadStats, setLeadStats] = useState({ open: 0, wonThisMonth: 0, lostThisMonth: 0, atRisk: 0 });
-  const [funnelStages, setFunnelStages] = useState([]);
+  const [leadStats, setLeadStats] = useState({ total: 0, byStatus: {} });
   const [users, setUsers] = useState([]);
   const [businessUnits, setBusinessUnits] = useState([]);
   const [leadFilters, setLeadFilters] = useState({
     businessUnitId: '',
     ownerUserId: '',
-    stageId: '',
     status: '',
   });
   const [reassignModal, setReassignModal] = useState({ open: false, leadId: null });
   const [reassignUserId, setReassignUserId] = useState('');
   const [reassigning, setReassigning] = useState(false);
   const [message, setMessage] = useState(null);
+  const [activeBuSchema, setActiveBuSchema] = useState([]);
+  const pagination = usePagination(1, 20);
 
-  // Load initial data
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [usersRes, busRes, stagesRes] = await Promise.all([
-          UsersService.getAll(),
+        const [usersRes, busRes] = await Promise.all([
+          UsersService.getExecutives(),
           BusinessUnitsService.getAll(),
-          FunnelStagesService.getAll(),
         ]);
         if (usersRes?.success) setUsers(usersRes.data || []);
         if (busRes?.success) setBusinessUnits(busRes.data || []);
-        if (stagesRes?.success) setFunnelStages(stagesRes.data || []);
       } catch (e) {
         console.error('Error loading initial data:', e);
       }
@@ -46,24 +58,46 @@ const AdminLeads = () => {
     loadData();
   }, []);
 
-  // Load leads and stats
+  useEffect(() => {
+    pagination.reset();
+  }, [leadFilters.businessUnitId, leadFilters.ownerUserId, leadFilters.status]);
+
+  useEffect(() => {
+    if (!leadFilters.businessUnitId) {
+      setActiveBuSchema([]);
+      return;
+    }
+    BusinessUnitsService.getSchema(leadFilters.businessUnitId)
+      .then((res) => {
+        if (res?.success && res.data) setActiveBuSchema(res.data.leadSchema || []);
+        else setActiveBuSchema([]);
+      })
+      .catch(() => setActiveBuSchema([]));
+  }, [leadFilters.businessUnitId]);
+
   useEffect(() => {
     const loadLeadsData = async () => {
       setLoadingLeads(true);
       try {
-        const params = {};
+        const params = {
+          page: pagination.currentPage,
+          limit: pagination.limit,
+        };
         if (leadFilters.businessUnitId) params.businessUnitId = leadFilters.businessUnitId;
         if (leadFilters.ownerUserId) params.ownerUserId = leadFilters.ownerUserId;
-        if (leadFilters.stageId) params.stageId = leadFilters.stageId;
         if (leadFilters.status) params.status = leadFilters.status;
+
+        const statsParams = {};
+        if (leadFilters.businessUnitId) statsParams.businessUnitId = leadFilters.businessUnitId;
 
         const [leadsRes, statsRes] = await Promise.all([
           LeadsService.getAll(params),
-          LeadsService.getStats(),
+          LeadsService.getStats(statsParams),
         ]);
 
         if (leadsRes?.success && Array.isArray(leadsRes.data)) {
           setLeads(leadsRes.data);
+          pagination.updatePaginationData(leadsRes.pagination);
         } else {
           setLeads([]);
         }
@@ -80,7 +114,7 @@ const AdminLeads = () => {
     };
 
     loadLeadsData();
-  }, [leadFilters]);
+  }, [leadFilters, pagination.currentPage, pagination.limit]);
 
   const handleReassignLead = async () => {
     if (!reassignModal.leadId || !reassignUserId) {
@@ -95,7 +129,6 @@ const AdminLeads = () => {
         setMessage('Lead reasignado correctamente.');
         setReassignModal({ open: false, leadId: null });
         setReassignUserId('');
-        // Refresh leads
         const leadsRes = await LeadsService.getAll(leadFilters);
         if (leadsRes?.success && Array.isArray(leadsRes.data)) {
           setLeads(leadsRes.data);
@@ -120,59 +153,58 @@ const AdminLeads = () => {
     return bu?.name || bu?.code || '—';
   };
 
-  const getStageName = (stageId) => {
-    const stage = funnelStages.find((s) => s._id === stageId);
-    return stage?.name || '—';
-  };
-
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
     const d = new Date(dateStr);
     return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  const executives = useMemo(() => users.filter((u) => u.roleName === 'EXECUTIVE'), [users]);
+  const executives = users;
+  const dynCols = activeBuSchema.filter((f) => f.type !== 'textarea').slice(0, 4);
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-50">
       <Sidebar />
       <main className="flex-1 px-4 py-6 lg:px-10 lg:py-8">
-        <header className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight">Leads de la empresa</h1>
-          <p className="text-xs text-slate-400">
-            Vista administrativa: todos los leads, filtros y reasignaciones.
-          </p>
+        <header className="mb-6 flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Leads de la empresa</h1>
+            <p className="text-xs text-slate-400">
+              Vista administrativa: todos los leads, filtros y reasignaciones.
+            </p>
+          </div>
+          <Button type="button" onClick={() => navigate('/leads/new')}>
+            + Nuevo lead
+          </Button>
         </header>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
           <Card>
             <CardContent className="pt-4">
-              <p className="text-xs text-slate-400 uppercase tracking-wide">Abiertos</p>
-              <p className="text-2xl font-bold text-emerald-400">{leadStats.open}</p>
+              <p className="text-xs uppercase tracking-wide text-slate-400">En gestión</p>
+              <p className="text-2xl font-bold text-sky-400">{leadStats.openCount ?? openCount}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
-              <p className="text-xs text-slate-400 uppercase tracking-wide">Ganados (mes)</p>
-              <p className="text-2xl font-bold text-green-400">{leadStats.wonThisMonth}</p>
+              <p className="text-xs uppercase tracking-wide text-slate-400">Ganados</p>
+              <p className="text-2xl font-bold text-emerald-400">{leadStats.wonCount || 0}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
-              <p className="text-xs text-slate-400 uppercase tracking-wide">Perdidos (mes)</p>
-              <p className="text-2xl font-bold text-red-400">{leadStats.lostThisMonth}</p>
+              <p className="text-xs uppercase tracking-wide text-slate-400">Perdidos</p>
+              <p className="text-2xl font-bold text-rose-400">{leadStats.lostCount || 0}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
-              <p className="text-xs text-slate-400 uppercase tracking-wide">En riesgo</p>
-              <p className="text-2xl font-bold text-amber-400">{leadStats.atRisk}</p>
+              <p className="text-xs uppercase tracking-wide text-slate-400">No válidos</p>
+              <p className="text-2xl font-bold text-red-400">{leadStats.invalidCount || 0}</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Filtros</CardTitle>
@@ -182,7 +214,9 @@ const AdminLeads = () => {
               <select
                 className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                 value={leadFilters.businessUnitId}
-                onChange={(e) => setLeadFilters((f) => ({ ...f, businessUnitId: e.target.value }))}
+                onChange={(e) =>
+                  setLeadFilters((f) => ({ ...f, businessUnitId: e.target.value }))
+                }
               >
                 <option value="">Todas las unidades</option>
                 {businessUnits.map((bu) => (
@@ -207,26 +241,15 @@ const AdminLeads = () => {
 
               <select
                 className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
-                value={leadFilters.stageId}
-                onChange={(e) => setLeadFilters((f) => ({ ...f, stageId: e.target.value }))}
-              >
-                <option value="">Todas las etapas</option>
-                {funnelStages.map((s) => (
-                  <option key={s._id} value={s._id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                 value={leadFilters.status}
                 onChange={(e) => setLeadFilters((f) => ({ ...f, status: e.target.value }))}
               >
                 <option value="">Todos los estados</option>
-                <option value="OPEN">Abierto</option>
-                <option value="WON">Ganado</option>
-                <option value="LOST">Perdido</option>
+                {LEAD_STATUSES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
               </select>
 
               <Button
@@ -234,7 +257,7 @@ const AdminLeads = () => {
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  setLeadFilters({ businessUnitId: '', ownerUserId: '', stageId: '', status: '' })
+                  setLeadFilters({ businessUnitId: '', ownerUserId: '', status: '' })
                 }
               >
                 Limpiar filtros
@@ -243,7 +266,6 @@ const AdminLeads = () => {
           </CardContent>
         </Card>
 
-        {/* Leads Table */}
         <Card>
           <CardHeader>
             <CardTitle>
@@ -252,7 +274,7 @@ const AdminLeads = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {message && (
+            {message && typeof message === 'string' && (
               <div className="mb-4 rounded-md bg-emerald-500/20 px-4 py-2 text-sm text-emerald-300">
                 {message}
               </div>
@@ -260,106 +282,110 @@ const AdminLeads = () => {
             {loadingLeads ? (
               <p className="text-sm text-slate-400">Cargando leads…</p>
             ) : leads.length === 0 ? (
-              <p className="text-sm text-slate-400">No se encontraron leads con los filtros actuales.</p>
+              <p className="text-sm text-slate-400">
+                No se encontraron leads con los filtros actuales.
+              </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700 text-left text-slate-400">
-                      <th className="pb-2 pr-4">Cliente</th>
-                      <th className="pb-2 pr-4">Unidad</th>
-                      <th className="pb-2 pr-4">Ejecutivo</th>
-                      <th className="pb-2 pr-4">Etapa</th>
-                      <th className="pb-2 pr-4">Estado</th>
-                      <th className="pb-2 pr-4">Monto est.</th>
-                      <th className="pb-2 pr-4">Última act.</th>
-                      <th className="pb-2 pr-4">Alertas</th>
-                      <th className="pb-2">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leads.map((lead) => (
-                      <tr key={lead._id} className="border-b border-slate-800">
-                        <td className="py-2 pr-4 text-xs max-w-[160px] truncate">
-                          {lead.clientName?.trim() || `…${String(lead._id).slice(-6)}`}
-                        </td>
-                        <td className="py-2 pr-4 text-xs">{getBUName(lead.businessUnitId)}</td>
-                        <td className="py-2 pr-4">{getUserName(lead.ownerUserId)}</td>
-                        <td className="py-2 pr-4">{getStageName(lead.currentStageId)}</td>
-                        <td className="py-2 pr-4">
-                          <span
-                            className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
-                              lead.status === 'WON'
-                                ? 'bg-green-500/20 text-green-400'
-                                : lead.status === 'LOST'
-                                ? 'bg-red-500/20 text-red-400'
-                                : 'bg-slate-600/30 text-slate-300'
-                            }`}
-                          >
-                            {lead.status === 'OPEN' ? 'Abierto' : lead.status === 'WON' ? 'Ganado' : 'Perdido'}
-                          </span>
-                        </td>
-                        <td className="py-2 pr-4 text-right font-mono text-xs">
-                          {lead.estimatedAmount
-                            ? `$${lead.estimatedAmount.toLocaleString('es-CL')}`
-                            : '—'}
-                        </td>
-                        <td className="py-2 pr-4 text-xs text-slate-400">
-                          {formatDate(lead.lastActivityAt)}
-                        </td>
-                        <td className="py-2 pr-4">
-                          {lead.isDormant && (
-                            <span className="mr-1 inline-block rounded bg-amber-500/20 px-1.5 py-0.5 text-xs text-amber-400">
-                              Dormido
-                            </span>
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-700 text-left text-slate-400">
+                        {dynCols.length > 0
+                          ? dynCols.map((col) => (
+                              <th key={col.key} className="pb-2 pr-4">{col.label}</th>
+                            ))
+                          : (
+                            <>
+                              <th className="pb-2 pr-4">Razón Social</th>
+                              <th className="pb-2 pr-4">RUT</th>
+                              <th className="pb-2 pr-4">Contacto</th>
+                              <th className="pb-2 pr-4">Teléfono</th>
+                            </>
                           )}
-                          {lead.stagnationLevel && (
+                        <th className="pb-2 pr-4">Unidad</th>
+                        <th className="pb-2 pr-4">Ejecutivo</th>
+                        <th className="pb-2 pr-4">Estado</th>
+                        <th className="pb-2 pr-4">Ingreso</th>
+                        <th className="pb-2">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {leads.map((lead) => (
+                        <tr key={lead._id} className="border-b border-slate-800">
+                          {dynCols.length > 0
+                            ? dynCols.map((col) => (
+                                <td key={col.key} className="max-w-40 truncate py-2 pr-4 text-xs">
+                                  {getLeadField(lead, col.key)}
+                                </td>
+                              ))
+                            : (
+                              <>
+                                <td className="max-w-40 truncate py-2 pr-4 text-xs">{lead.razonSocial || '—'}</td>
+                                <td className="py-2 pr-4 font-mono text-xs">{lead.rutEmpresa || '—'}</td>
+                                <td className="py-2 pr-4 text-xs">{lead.contactName || '—'}</td>
+                                <td className="py-2 pr-4 text-xs">{lead.contactPhone || '—'}</td>
+                              </>
+                            )}
+                          <td className="py-2 pr-4 text-xs">{getBUName(lead.businessUnitId)}</td>
+                          <td className="py-2 pr-4 text-xs">{getUserName(lead.ownerUserId)}</td>
+                          <td className="py-2 pr-4">
                             <span
-                              className={`inline-block rounded px-1.5 py-0.5 text-xs ${
-                                lead.stagnationLevel === 'CRITICAL'
-                                  ? 'bg-red-500/20 text-red-400'
-                                  : lead.stagnationLevel === 'OVERDUE'
-                                  ? 'bg-orange-500/20 text-orange-400'
-                                  : 'bg-yellow-500/20 text-yellow-400'
+                              className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
+                                STATUS_BADGE[lead.status] || 'bg-slate-600/30 text-slate-300'
                               }`}
                             >
-                              {lead.stagnationLevel}
+                              {getStatusLabel(lead.status)}
                             </span>
-                          )}
-                        </td>
-                        <td className="py-2 whitespace-nowrap">
-                          <div className="flex flex-wrap gap-1">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => navigate(`/leads/${lead._id}`)}
-                            >
-                              Abrir
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setReassignModal({ open: true, leadId: lead._id });
-                                setReassignUserId(lead.ownerUserId || '');
-                              }}
-                            >
-                              Reasignar
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          </td>
+                          <td className="py-2 pr-4 text-xs text-slate-400">
+                            {formatDate(lead.createdAt)}
+                          </td>
+                          <td className="py-2 whitespace-nowrap">
+                            <div className="flex flex-wrap gap-1">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => navigate(`/leads/${lead._id}`)}
+                              >
+                                Abrir
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setReassignModal({ open: true, leadId: lead._id });
+                                  setReassignUserId(lead.ownerUserId || '');
+                                }}
+                              >
+                                Reasignar
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {leads.length > 0 && (
+                  <PaginationControls
+                    currentPage={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    limit={pagination.limit}
+                    totalDocs={pagination.totalDocs}
+                    hasNextPage={pagination.hasNextPage}
+                    hasPrevPage={pagination.hasPrevPage}
+                    onPageChange={pagination.goToPage}
+                    onLimitChange={pagination.changeLimit}
+                  />
+                )}
+              </>
             )}
           </CardContent>
         </Card>
 
-        {/* Reassign Modal */}
         {reassignModal.open && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
             <Card className="w-full max-w-md">

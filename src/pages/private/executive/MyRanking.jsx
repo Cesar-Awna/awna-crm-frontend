@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Sidebar from '../../../components/Sidebar.jsx';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx';
 import RankingService from '../../../services/Ranking.js';
+import { getStoredSession } from '../../../lib/session.js';
 
 const MyRanking = () => {
   const [weeklyData, setWeeklyData] = useState([]);
@@ -11,7 +12,7 @@ const MyRanking = () => {
   const [period, setPeriod] = useState('weekly');
   const [loading, setLoading] = useState(true);
 
-  const userId = JSON.parse(localStorage.getItem('user') || '{}')?.id;
+  const userId = getStoredSession()?.userId;
 
   useEffect(() => {
     const loadData = async () => {

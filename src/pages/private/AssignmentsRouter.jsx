@@ -1,24 +1,11 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import SupervisorAssignments from './supervisor/Assignments.jsx';
 import AdminAssignments from './company-admin/Assignments.jsx';
+import { getStoredRole } from '../../lib/session.js';
 
 const AssignmentsRouter = () => {
-  const role = useMemo(() => {
-    try {
-      const raw = localStorage.getItem('user');
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      const session = parsed?.data?.session || parsed?.session || null;
-      return session?.roleName?.toUpperCase() || null;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  if (role === 'COMPANY_ADMIN' || role === 'SUPERVISOR') {
-    return <AdminAssignments />;
-  }
-
+  const role = getStoredRole();
+  if (role === 'COMPANY_ADMIN' || role === 'SUPERVISOR') return <AdminAssignments />;
   return <SupervisorAssignments />;
 };
 

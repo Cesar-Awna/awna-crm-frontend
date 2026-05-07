@@ -6,6 +6,7 @@ import { Input } from '../../../components/ui/input.jsx';
 import AuthService from '../../../services/Auth.js';
 import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import CompaniesService from '../../../services/Companies.js';
+import ChangePasswordCard from '../../../components/ChangePasswordCard.jsx';
 import { FloatingAlert } from '../../../components/ui/floating-alert.jsx';
 
 const ROLE_LABELS = {
@@ -37,15 +38,6 @@ const Profile = () => {
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({ fullName: '', phone: '' });
   const [saving, setSaving] = useState(false);
-
-  // Change password state
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -149,47 +141,6 @@ const Profile = () => {
     }
   };
 
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-
-    if (!passwordForm.currentPassword || !passwordForm.newPassword) {
-      setError('Completa todos los campos de contraseña');
-      return;
-    }
-
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setError('Las contraseñas nuevas no coinciden');
-      return;
-    }
-
-    if (passwordForm.newPassword.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-
-    setChangingPassword(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const res = await AuthService.changePassword({
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-      });
-
-      if (res?.success) {
-        setMessage('Contraseña cambiada correctamente');
-        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        setShowPasswordForm(false);
-      } else {
-        setError(res?.message || 'Error al cambiar contraseña');
-      }
-    } catch (e) {
-      setError(e?.response?.data?.message || 'Error al cambiar contraseña');
-    } finally {
-      setChangingPassword(false);
-    }
-  };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
@@ -385,8 +336,8 @@ const Profile = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                {showPasswordForm ? (
-                  <form onSubmit={handleChangePassword} className="max-w-md space-y-4">
+                {false ? (
+                  <form className="max-w-md space-y-4">
                     <div>
                       <label className="mb-1 block text-sm text-slate-400">Contraseña actual</label>
                       <Input
@@ -443,9 +394,7 @@ const Profile = () => {
                     </div>
                   </form>
                 ) : (
-                  <p className="text-sm text-slate-400">
-                    Tu contraseña está configurada. Puedes cambiarla en cualquier momento.
-                  </p>
+                  <ChangePasswordCard />
                 )}
               </CardContent>
             </Card>

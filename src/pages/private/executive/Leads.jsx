@@ -1,35 +1,74 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../../components/Sidebar.jsx';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx';
+import { Card, CardContent } from '../../../components/ui/card.jsx';
 import { Button } from '../../../components/ui/button.jsx';
 import LeadsService from '../../../services/Leads.js';
-import FunnelStagesService from '../../../services/FunnelStages.js';
+import BusinessUnitsService from '../../../services/BusinessUnits.js';
+import { getStoredSession } from '../../../lib/session.js';
+import {
+  LEAD_STATUSES,
+  getStatusLabel,
+} from '../../../lib/leadFormMappers.js';
+
+const STATUS_COLORS = {
+  NUEVO: '#38bdf8',
+  DATO_ERRADO: '#f87171',
+  CONTACTADO: '#60a5fa',
+  INTERESADO: '#a78bfa',
+  COTIZACION_ENVIADA: '#fbbf24',
+  EN_SEGUIMIENTO: '#f97316',
+  CERRADO_GANADO: '#10b981',
+  CERRADO_PERDIDO: '#ef4444',
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('es-CL', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
+const getLeadField = (lead, key) => lead?.fields?.[key] ?? lead?.[key] ?? '—';
 
 const Leads = () => {
   const navigate = useNavigate();
   const [leads, setLeads] = useState([]);
-  const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('kanban');
-  const [filterStatus, setFilterStatus] = useState('OPEN');
-  const [filterStage, setFilterStage] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [search, setSearch] = useState('');
+  const [buSchema, setBuSchema] = useState([]);
+  const [pipelineStages, setPipelineStages] = useState([]);
+
+  useEffect(() => {
+    const loadSchema = async () => {
+      const session = getStoredSession();
+      const buId = session?.businessUnitIds?.[0];
+      if (!buId) return;
+      try {
+        const res = await BusinessUnitsService.getSchema(buId);
+        if (res?.success && res.data) {
+          setBuSchema(res.data.leadSchema || []);
+          setPipelineStages(res.data.pipelineStages || []);
+        }
+      } catch {
+        // fallback to defaults
+      }
+    };
+    loadSchema();
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [leadsRes, stagesRes] = await Promise.all([
-          LeadsService.getAll({ status: filterStatus || undefined, stageId: filterStage || undefined }),
-          FunnelStagesService.getAll(),
-        ]);
-
-        if (leadsRes?.success) {
-          setLeads(leadsRes.data || []);
-        }
-        if (stagesRes?.success) {
-          setStages(stagesRes.data || []);
-        }
+        const res = await LeadsService.getAll({
+          status: filterStatus || undefined,
+        });
+        if (res?.success) setLeads(res.data || []);
       } catch (e) {
         console.error('Error loading leads:', e);
       } finally {
@@ -37,90 +76,86 @@ const Leads = () => {
       }
     };
     loadData();
-  }, [filterStatus, filterStage]);
+  }, [filterStatus]);
 
-  const getStageName = (stageId) => {
-    const stage = stages.find((s) => s._id === stageId);
-    return stage?.name || '—';
-  };
-
-  const getStageColor = (stageId) => {
-    const stage = stages.find((s) => s._id === stageId);
-    return stage?.color || '#64748b';
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('es-CL', {
-      day: '2-digit',
-      month: 'short',
-    });
-  };
-
-  const getLeadsByStage = (stageId) => {
-    return leads.filter((l) => l.currentStageId === stageId);
-  };
-
-  const handleChangeStage = async (leadId, newStageId) => {
+  const handleChangeStatus = async (leadId, newStatus) => {
     try {
-      const res = await LeadsService.changeStage(leadId, { stageId: newStageId });
+      const res = await LeadsService.changeStatus(leadId, newStatus);
       if (res?.success) {
         setLeads((prev) =>
-          prev.map((l) => (l._id === leadId ? { ...l, currentStageId: newStageId } : l))
+          prev.map((l) => (l._id === leadId ? { ...l, status: newStatus } : l))
         );
       }
     } catch (e) {
-      console.error('Error changing stage:', e);
+      console.error('Error changing status:', e);
     }
   };
 
-  const handleMarkWon = async (leadId) => {
-    try {
-      const res = await LeadsService.markWon(leadId, {});
-      if (res?.success) {
-        setLeads((prev) => prev.map((l) => (l._id === leadId ? { ...l, status: 'WON' } : l)));
-      }
-    } catch (e) {
-      console.error('Error marking won:', e);
+  const filteredLeads = leads.filter((l) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    if ((l.razonSocial || '').toLowerCase().includes(q)) return true;
+    if ((l.rutEmpresa || '').toLowerCase().includes(q)) return true;
+    if ((l.contactName || '').toLowerCase().includes(q)) return true;
+    if (l.fields) {
+      return Object.values(l.fields).some((v) =>
+        String(v ?? '').toLowerCase().includes(q)
+      );
     }
-  };
+    return false;
+  });
 
-  const handleMarkLost = async (leadId) => {
-    try {
-      const res = await LeadsService.markLost(leadId, {});
-      if (res?.success) {
-        setLeads((prev) => prev.map((l) => (l._id === leadId ? { ...l, status: 'LOST' } : l)));
-      }
-    } catch (e) {
-      console.error('Error marking lost:', e);
+  // Dynamic pipeline stages — fall back to LEAD_STATUSES when BU has none
+  const stages =
+    pipelineStages.length > 0
+      ? pipelineStages
+          .slice()
+          .sort((a, b) => a.order - b.order)
+          .map((s) => ({ value: s.key, label: s.label, color: s.color }))
+      : LEAD_STATUSES.map((s) => ({ ...s, color: STATUS_COLORS[s.value] }));
+
+  // Columns to show per lead in list and kanban
+  const inlineFields = buSchema.filter((f) => f.type !== 'textarea');
+  const listCols = inlineFields.length > 0 ? inlineFields.slice(0, 4) : null;
+  const cardFields = inlineFields.length > 0 ? inlineFields.slice(0, 3) : null;
+
+  const getLeadsByStatus = (status) => filteredLeads.filter((l) => l.status === status);
+
+  const stageTypes = (() => {
+    if (pipelineStages.length > 0 && pipelineStages.some((s) => s.stageType && s.stageType !== 'open')) {
+      return {
+        won:     pipelineStages.filter((s) => s.stageType === 'won').map((s) => s.key),
+        lost:    pipelineStages.filter((s) => s.stageType === 'lost').map((s) => s.key),
+        invalid: pipelineStages.filter((s) => s.stageType === 'invalid').map((s) => s.key),
+      };
     }
-  };
-
-  const openLeads = leads.filter((l) => l.status === 'OPEN').length;
-  const wonLeads = leads.filter((l) => l.status === 'WON').length;
-  const lostLeads = leads.filter((l) => l.status === 'LOST').length;
+    return { won: ['CERRADO_GANADO'], lost: ['CERRADO_PERDIDO'], invalid: ['DATO_ERRADO'] };
+  })();
+  const closedKeys = [...stageTypes.won, ...stageTypes.lost, ...stageTypes.invalid];
+  const totalOpen  = filteredLeads.filter((l) => !closedKeys.includes(l.status)).length;
+  const wonCount   = filteredLeads.filter((l) => stageTypes.won.includes(l.status)).length;
+  const lostCount  = filteredLeads.filter((l) => stageTypes.lost.includes(l.status)).length;
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-50">
       <Sidebar />
-      <main className="flex-1 px-4 py-6 lg:px-10 lg:py-8 overflow-x-auto">
-        <header className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <main className="flex-1 overflow-x-auto px-4 py-6 lg:px-10 lg:py-8">
+        <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Mis Leads</h1>
-            <p className="text-xs text-slate-400">Gestiona tus oportunidades de venta.</p>
+            <p className="text-xs text-slate-400">Gestiona tus leads por estado.</p>
           </div>
           <div className="flex items-center gap-3">
             <Button onClick={() => navigate('/leads/new')}>+ Nuevo Lead</Button>
           </div>
         </header>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="mb-6 grid grid-cols-3 gap-4">
           <Card>
             <CardContent className="border-l-[3px] border-l-sky-500/50 pt-4 text-center">
-              <p className="text-xs uppercase text-[var(--muted-fg)]">Abiertos</p>
+              <p className="text-xs uppercase text-[var(--muted-fg)]">En gestión</p>
               <p className="text-2xl font-semibold tabular-nums tracking-tight text-[var(--input-fg)]">
-                {openLeads}
+                {totalOpen}
               </p>
             </CardContent>
           </Card>
@@ -128,7 +163,7 @@ const Leads = () => {
             <CardContent className="border-l-[3px] border-l-emerald-500/50 pt-4 text-center">
               <p className="text-xs uppercase text-[var(--muted-fg)]">Ganados</p>
               <p className="text-2xl font-semibold tabular-nums tracking-tight text-[var(--input-fg)]">
-                {wonLeads}
+                {wonCount}
               </p>
             </CardContent>
           </Card>
@@ -136,14 +171,13 @@ const Leads = () => {
             <CardContent className="border-l-[3px] border-l-rose-500/45 pt-4 text-center">
               <p className="text-xs uppercase text-[var(--muted-fg)]">Perdidos</p>
               <p className="text-2xl font-semibold tabular-nums tracking-tight text-[var(--input-fg)]">
-                {lostLeads}
+                {lostCount}
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3 mb-6">
+        <div className="mb-6 flex flex-wrap gap-3">
           <div className="flex overflow-hidden rounded-lg border border-[var(--border-color)]">
             <button
               type="button"
@@ -169,44 +203,40 @@ const Leads = () => {
             </button>
           </div>
 
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
-          >
-            <option value="">Todos los estados</option>
-            <option value="OPEN">Abiertos</option>
-            <option value="WON">Ganados</option>
-            <option value="LOST">Perdidos</option>
-          </select>
-
           {viewMode === 'list' && (
             <select
-              value={filterStage}
-              onChange={(e) => setFilterStage(e.target.value)}
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
               className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
             >
-              <option value="">Todas las etapas</option>
-              {stages.map((stage) => (
-                <option key={stage._id} value={stage._id}>
-                  {stage.name}
+              <option value="">Todos los estados</option>
+              {stages.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
                 </option>
               ))}
             </select>
           )}
+
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar lead…"
+            className="min-w-[280px] flex-1 rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
+          />
         </div>
 
         {loading ? (
           <p className="text-sm text-slate-400">Cargando leads…</p>
         ) : viewMode === 'kanban' ? (
-          /* Kanban View */
           <div className="flex gap-4 overflow-x-auto pb-4">
-            {stages.map((stage) => {
-              const stageLeads = getLeadsByStage(stage._id);
-              const accent = stage.color || '#64748b';
+            {stages.map((s) => {
+              const statusLeads = getLeadsByStatus(s.value);
+              const accent = s.color || STATUS_COLORS[s.value] || '#94a3b8';
               return (
                 <div
-                  key={stage._id}
+                  key={s.value}
                   className="flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--panel-bg)]"
                 >
                   <div className="flex items-center gap-2.5 border-b border-[var(--border-color)] bg-[var(--input-bg)] px-3 py-2.5">
@@ -216,17 +246,17 @@ const Leads = () => {
                       aria-hidden
                     />
                     <div className="min-w-0 flex-1 text-sm font-medium text-[var(--input-fg)]">
-                      <span className="truncate">{stage.name}</span>{' '}
-                      <span className="font-normal text-[var(--muted-fg)]">({stageLeads.length})</span>
+                      <span className="truncate">{s.label}</span>{' '}
+                      <span className="font-normal text-[var(--muted-fg)]">({statusLeads.length})</span>
                     </div>
                   </div>
                   <div className="min-h-[200px] space-y-2 p-2">
-                    {stageLeads.length === 0 ? (
+                    {statusLeads.length === 0 ? (
                       <p className="py-4 text-center text-xs text-[var(--muted-fg)]">
-                        Sin leads en esta etapa
+                        Sin leads
                       </p>
                     ) : (
-                      stageLeads.map((lead) => (
+                      statusLeads.map((lead) => (
                         <div
                           key={lead._id}
                           role="button"
@@ -237,38 +267,56 @@ const Leads = () => {
                           }}
                           className="cursor-pointer rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)]/60 p-3 transition-colors hover:border-emerald-500/40"
                         >
-                          <div className="mb-2 flex items-start justify-between gap-2">
-                            <p className="flex-1 truncate text-sm font-medium text-[var(--input-fg)]">
-                              {lead.clientName?.trim() || `Lead #${lead._id.slice(-6)}`}
-                            </p>
-                            {lead.estimatedAmount && (
-                              <span className="shrink-0 font-mono text-xs text-emerald-400/85">
-                                ${lead.estimatedAmount.toLocaleString('es-CL')}
-                              </span>
-                            )}
-                          </div>
-                          <p className="mb-2 text-xs text-[var(--muted-fg)]">
-                            {lead.nextActionType || 'Sin acción'} •{' '}
-                            {formatDate(lead.nextActionAt)}
+                          {cardFields ? (
+                            <>
+                              <p className="mb-1 truncate text-sm font-medium text-[var(--input-fg)]">
+                                {getLeadField(lead, cardFields[0]?.key) || `Lead #${lead._id.slice(-6)}`}
+                              </p>
+                              {cardFields[1] && (
+                                <p className="mb-1 truncate text-xs text-[var(--muted-fg)]">
+                                  {getLeadField(lead, cardFields[1].key)}
+                                </p>
+                              )}
+                              {cardFields[2] && (
+                                <p className="mb-2 truncate text-xs text-[var(--muted-fg)]">
+                                  {getLeadField(lead, cardFields[2].key)}
+                                </p>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <p className="mb-1 truncate text-sm font-medium text-[var(--input-fg)]">
+                                {lead.razonSocial || `Lead #${lead._id.slice(-6)}`}
+                              </p>
+                              <p className="mb-1 truncate text-xs text-[var(--muted-fg)]">
+                                {lead.rutEmpresa || '—'}
+                              </p>
+                              <p className="mb-2 truncate text-xs text-[var(--muted-fg)]">
+                                {lead.contactName} · {lead.contactPhone || lead.contactEmail || '—'}
+                              </p>
+                            </>
+                          )}
+                          <p className="text-[10px] text-[var(--muted-fg)]">
+                            {formatDate(lead.createdAt)}
                           </p>
-                          <div className="flex flex-wrap gap-1">
-                            {stages.map((s) =>
-                              s._id !== stage._id ? (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {stages.filter((x) => x.value !== s.value)
+                              .slice(0, 4)
+                              .map((x) => (
                                 <button
-                                  key={s._id}
+                                  key={x.value}
                                   type="button"
-                                  className="max-w-[4.5rem] truncate rounded border border-[var(--border-color)] bg-[var(--hover-bg)] px-2 py-1 text-xs text-[var(--muted-fg-2)] hover:bg-[var(--input-bg)]"
-                                  style={{ borderLeft: `3px solid ${s.color || '#64748b'}` }}
+                                  className="max-w-[5rem] truncate rounded border border-[var(--border-color)] bg-[var(--hover-bg)] px-2 py-1 text-[10px] text-[var(--muted-fg-2)] hover:bg-[var(--input-bg)]"
+                                  style={{ borderLeft: `3px solid ${x.color || STATUS_COLORS[x.value] || '#94a3b8'}` }}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleChangeStage(lead._id, s._id);
+                                    handleChangeStatus(lead._id, x.value);
                                   }}
-                                  title={`Mover a ${s.name}`}
+                                  title={`Mover a ${x.label}`}
                                 >
-                                  {s.name.slice(0, 6)}
+                                  {x.label.slice(0, 8)}
                                 </button>
-                              ) : null
-                            )}
+                              ))}
                           </div>
                         </div>
                       ))
@@ -277,176 +325,75 @@ const Leads = () => {
                 </div>
               );
             })}
-
-            {/* Won / Lost columns */}
-            <div className="flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--panel-bg)]">
-              <div className="flex items-center gap-2.5 border-b border-[var(--border-color)] bg-[var(--input-bg)] px-3 py-2.5">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500/75 ring-1 ring-[var(--border-color)]"
-                  aria-hidden
-                />
-                <div className="text-sm font-medium text-[var(--input-fg)]">
-                  Ganados{' '}
-                  <span className="font-normal text-[var(--muted-fg)]">({wonLeads})</span>
-                </div>
-              </div>
-              <div className="min-h-[200px] space-y-2 p-2">
-                {leads
-                  .filter((l) => l.status === 'WON')
-                  .slice(0, 5)
-                  .map((lead) => (
-                    <div
-                      key={lead._id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => navigate(`/leads/${lead._id}`)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') navigate(`/leads/${lead._id}`);
-                      }}
-                      className="cursor-pointer rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)]/60 p-3 transition-colors hover:border-emerald-500/45"
-                    >
-                      <p className="text-sm font-medium text-[var(--input-fg)]">
-                        {lead.clientName?.trim() || `Lead #${lead._id.slice(-6)}`}
-                      </p>
-                      {lead.estimatedAmount && (
-                        <p className="mt-1 font-mono text-xs text-emerald-400/85">
-                          ${lead.estimatedAmount.toLocaleString('es-CL')}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-              </div>
-            </div>
-
-            <div className="flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--panel-bg)]">
-              <div className="flex items-center gap-2.5 border-b border-[var(--border-color)] bg-[var(--input-bg)] px-3 py-2.5">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full bg-rose-500/70 ring-1 ring-[var(--border-color)]"
-                  aria-hidden
-                />
-                <div className="text-sm font-medium text-[var(--input-fg)]">
-                  Perdidos{' '}
-                  <span className="font-normal text-[var(--muted-fg)]">({lostLeads})</span>
-                </div>
-              </div>
-              <div className="min-h-[200px] space-y-2 p-2">
-                {leads
-                  .filter((l) => l.status === 'LOST')
-                  .slice(0, 5)
-                  .map((lead) => (
-                    <div
-                      key={lead._id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => navigate(`/leads/${lead._id}`)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') navigate(`/leads/${lead._id}`);
-                      }}
-                      className="cursor-pointer rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)]/60 p-3 transition-colors hover:border-rose-500/40"
-                    >
-                      <p className="text-sm font-medium text-[var(--input-fg)]">
-                        {lead.clientName?.trim() || `Lead #${lead._id.slice(-6)}`}
-                      </p>
-                      <p className="mt-1 text-xs text-[var(--muted-fg)]">{lead.lostReason || '—'}</p>
-                    </div>
-                  ))}
-              </div>
-            </div>
           </div>
         ) : (
-          /* List View */
           <Card>
             <CardContent className="pt-4">
-              {leads.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-8">
-                  No tienes leads que coincidan con los filtros.
+              {filteredLeads.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-400">
+                  No hay leads que coincidan con los filtros.
                 </p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-700 text-left text-slate-400">
-                        <th className="pb-2 pr-4">Cliente</th>
-                        <th className="pb-2 pr-4">ID</th>
-                        <th className="pb-2 pr-4">Etapa</th>
+                        {listCols
+                          ? listCols.map((col) => (
+                              <th key={col.key} className="pb-2 pr-4">{col.label}</th>
+                            ))
+                          : (
+                            <>
+                              <th className="pb-2 pr-4">Razón Social</th>
+                              <th className="pb-2 pr-4">RUT</th>
+                              <th className="pb-2 pr-4">Contacto</th>
+                              <th className="pb-2 pr-4">Teléfono</th>
+                            </>
+                          )}
                         <th className="pb-2 pr-4">Estado</th>
-                        <th className="pb-2 pr-4">Próx. acción</th>
-                        <th className="pb-2 pr-4">Monto est.</th>
-                        <th className="pb-2 pr-2">Detalle</th>
+                        <th className="pb-2 pr-4">Ingreso</th>
+                        <th className="pb-2 pr-2">Acción</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {leads.map((lead) => (
+                      {filteredLeads.map((lead) => (
                         <tr key={lead._id} className="border-b border-slate-800">
-                          <td className="py-2 pr-4 text-xs max-w-[140px] truncate">
-                            {lead.clientName?.trim() || '—'}
-                          </td>
-                          <td className="py-2 pr-4 font-mono text-xs">
-                            #{lead._id.slice(-6)}
-                          </td>
+                          {listCols
+                            ? listCols.map((col) => (
+                                <td key={col.key} className="max-w-[160px] truncate py-2 pr-4 text-xs">
+                                  {getLeadField(lead, col.key)}
+                                </td>
+                              ))
+                            : (
+                              <>
+                                <td className="max-w-[160px] truncate py-2 pr-4 text-xs">{lead.razonSocial || '—'}</td>
+                                <td className="py-2 pr-4 font-mono text-xs">{lead.rutEmpresa || '—'}</td>
+                                <td className="py-2 pr-4 text-xs">{lead.contactName || '—'}</td>
+                                <td className="py-2 pr-4 text-xs">{lead.contactPhone || '—'}</td>
+                              </>
+                            )}
                           <td className="py-2 pr-4">
                             <span
-                              className="inline-block w-2 h-2 rounded-full mr-2"
-                              style={{ backgroundColor: getStageColor(lead.currentStageId) }}
-                            />
-                            {getStageName(lead.currentStageId)}
-                          </td>
-                          <td className="py-2 pr-4">
-                            <span
-                              className={`rounded px-2 py-0.5 text-xs font-medium ${
-                                lead.status === 'WON'
-                                  ? 'bg-emerald-500/15 text-emerald-300'
-                                  : lead.status === 'LOST'
-                                  ? 'bg-rose-500/15 text-rose-300'
-                                  : 'bg-sky-500/15 text-sky-300'
-                              }`}
+                              className="rounded px-2 py-0.5 text-xs font-medium"
+                              style={{
+                                backgroundColor: `${STATUS_COLORS[lead.status] || '#94a3b8'}22`,
+                                color: STATUS_COLORS[lead.status] || '#94a3b8',
+                              }}
                             >
-                              {lead.status}
+                              {getStatusLabel(lead.status)}
                             </span>
                           </td>
-                          <td className="py-2 pr-4 text-xs">
-                            <span className="rounded bg-slate-700 px-2 py-0.5 mr-1">
-                              {lead.nextActionType || '—'}
-                            </span>
-                            {formatDate(lead.nextActionAt)}
-                          </td>
-                          <td className="py-2 pr-4 text-right font-mono">
-                            {lead.estimatedAmount
-                              ? `$${lead.estimatedAmount.toLocaleString('es-CL')}`
-                              : '—'}
-                          </td>
+                          <td className="py-2 pr-4 text-xs">{formatDate(lead.createdAt)}</td>
                           <td className="py-2 pr-2">
-                            <div className="flex flex-wrap gap-1">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="text-xs"
-                                onClick={() => navigate(`/leads/${lead._id}`)}
-                              >
-                                Abrir
-                              </Button>
-                              {lead.status === 'OPEN' && (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-xs"
-                                    onClick={() => handleMarkWon(lead._id)}
-                                  >
-                                    Ganado
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-xs text-red-400"
-                                    onClick={() => handleMarkLost(lead._id)}
-                                  >
-                                    Perdido
-                                  </Button>
-                                </>
-                              )}
-                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="text-xs"
+                              onClick={() => navigate(`/leads/${lead._id}`)}
+                            >
+                              Abrir
+                            </Button>
                           </td>
                         </tr>
                       ))}

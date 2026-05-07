@@ -23,7 +23,7 @@ const AdminRanking = () => {
     const loadData = async () => {
       try {
         const [usersRes, busRes] = await Promise.all([
-          UsersService.getAll(),
+          UsersService.getExecutives(),
           BusinessUnitsService.getAll(),
         ]);
         if (usersRes?.success) setUsers(usersRes.data || []);
@@ -88,12 +88,16 @@ const AdminRanking = () => {
 
     if (!latestPeriod) return [];
 
-    // Filter by latest period
-    let filtered = sorted.filter((r) => r.periodStart === latestPeriod);
+    const executiveIds = new Set(users.map((u) => String(u._id)));
+
+    // Only executives in the latest period
+    let filtered = sorted.filter(
+      (r) => r.periodStart === latestPeriod && executiveIds.has(String(r.userId))
+    );
 
     // Filter by business unit if selected
     if (filterBU) {
-      filtered = filtered.filter((r) => r.businessUnitId === filterBU);
+      filtered = filtered.filter((r) => String(r.businessUnitId) === filterBU);
     }
 
     // Sort by totalScore descending

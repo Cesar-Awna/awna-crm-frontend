@@ -5,8 +5,8 @@ class MetricsService {
   getExecutive = () => instance.get('/api/metrics/executive');
   getSupervisor = () => instance.get('/api/metrics/supervisor');
   getConversion = () => instance.get('/api/metrics/conversion');
-  getFunnel = () => instance.get('/api/metrics/funnel');
   getSummary = () => instance.get('/api/metrics/summary');
+  getActivity = (params = {}) => instance.get('/api/metrics/activity', { params });
 }
 
 const Metrics = new MetricsService();

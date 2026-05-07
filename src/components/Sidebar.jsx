@@ -1,25 +1,32 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import { Button } from './ui/button.jsx';
 import { getNavItemsForRole } from '../config/navByRole.js';
+import { getStoredRole } from '../lib/session.js';
+import NotificationsService from '../services/Notifications.js';
 
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved === 'light' ? 'light' : 'dark';
+  });
 
-  const roleName = useMemo(() => {
-    try {
-      const raw = localStorage.getItem('user');
-      if (!raw) return null;
-      const data = JSON.parse(raw);
-      return data?.session?.roleName ?? null;
-    } catch {
-      return null;
-    }
-  }, []);
-
+  const roleName = useMemo(() => getStoredRole(), []);
   const navItems = useMemo(() => getNavItemsForRole(roleName), [roleName]);
+  const logoSrc = theme === 'light' ? '/images/logo-dark.webp' : '/images/logo-white.webp';
+
+  useEffect(() => {
+    NotificationsService.getUnread()
+      .then((res) => {
+        if (res?.success && Array.isArray(res.data)) setUnreadCount(res.data.length);
+      })
+      .catch(() => {});
+  }, [location.pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -30,18 +37,22 @@ const Sidebar = () => {
     <nav className="mt-6 space-y-1">
       {navItems.map((item) => {
         const active = location.pathname === item.to;
+        const Icon = item.icon;
         return (
           <Link
             key={item.key}
             to={item.to}
-            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              active ? 'bg-emerald-500 text-slate-950' : 'text-slate-300 hover:bg-slate-800'
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              active ? 'bg-emerald-500 text-slate-950' : 'text-slate-300 hover:bg-slate-800 hover:text-slate-100'
             }`}
           >
-            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-800 text-[0.6rem] font-bold text-[var(--app-fg)]">
-              {item.key.slice(0, 2).toUpperCase()}
-            </span>
+            {Icon && <Icon size={17} strokeWidth={1.75} className="shrink-0" />}
             <span>{item.label}</span>
+            {item.key === 'notifications' && unreadCount > 0 && (
+              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-xs font-bold text-white">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </Link>
         );
       })}
@@ -49,11 +60,9 @@ const Sidebar = () => {
       <button
         type="button"
         onClick={handleLogout}
-        className="mt-4 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-950/40 hover:text-red-300"
+        className="mt-4 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-950/40 hover:text-red-300"
       >
-        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-red-900/40 text-xs font-bold">
-          ⎋
-        </span>
+        <LogOut size={17} strokeWidth={1.75} className="shrink-0" />
         <span>Cerrar sesión</span>
       </button>
     </nav>
@@ -89,17 +98,10 @@ const Sidebar = () => {
       </div>
 
       <aside className="hidden h-screen w-64 flex-col border-r border-[var(--border-color)] bg-[var(--sidebar-bg)] px-4 py-6 lg:flex lg:sticky lg:top-0 lg:overflow-y-auto">
-        <div className="mb-6 flex items-center gap-2">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-slate-950 font-extrabold">
-            A
-          </div>
-          <div className="min-w-0">
-            <div className="text-sm font-semibold leading-tight text-slate-50">
-              Awna CRM
-            </div>
-            <div className="text-xs text-slate-400">
-              {roleName ? roleName.replace(/_/g, ' ') : 'Panel'}
-            </div>
+        <div className="mb-6">
+          <img src={logoSrc} alt="AWNA CRM" className="h-12 mb-3" />
+          <div className="text-xs text-slate-400 font-medium">
+            {roleName ? roleName.replace(/_/g, ' ') : 'Panel'}
           </div>
         </div>
         <NavContent />

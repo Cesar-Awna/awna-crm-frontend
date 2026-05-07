@@ -41,6 +41,8 @@ const CompanyDetail = () => {
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedBUIds, setSelectedBUIds] = useState([]);
   const [assigningBUs, setAssigningBUs] = useState(false);
+  const [statusChanging, setStatusChanging] = useState(false);
+  const [companyMsg, setCompanyMsg] = useState(null);
 
   const currentUser = useMemo(
     () => users.find((u) => u._id === selectedUserId),
@@ -212,6 +214,27 @@ const CompanyDetail = () => {
     }
   };
 
+  const handleToggleStatus = async () => {
+    if (!id || !company) return;
+    setStatusChanging(true);
+    setCompanyMsg(null);
+    try {
+      const fn = company.status === 'ACTIVE' ? CompaniesService.suspend : CompaniesService.reactivate;
+      const res = await fn(id);
+      if (res?.success) {
+        setCompany((prev) => ({ ...prev, status: res.data.status }));
+        setCompanyMsg(res.message || 'Estado actualizado.');
+        setTimeout(() => setCompanyMsg(null), 4000);
+      } else {
+        setCompanyMsg(res?.message || 'Error al cambiar estado');
+      }
+    } catch (e) {
+      setCompanyMsg(e?.response?.data?.message || e?.message || 'Error al cambiar estado');
+    } finally {
+      setStatusChanging(false);
+    }
+  };
+
   const renderTabs = () => (
     <div className="mb-4 flex gap-2 border-b border-slate-800">
       {TABS.map((tab) => {
@@ -240,25 +263,92 @@ const CompanyDetail = () => {
   );
 
   const renderEmpresa = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>Resumen de la empresa</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm">
-        <p>
-          <span className="text-slate-400">Nombre:</span> {company?.name}
-        </p>
-        <p>
-          <span className="text-slate-400">RUT:</span> {company?.rut || '—'}
-        </p>
-        <p>
-          <span className="text-slate-400">Estado:</span> {company?.status}
-        </p>
-        <p className="text-xs text-slate-500">
-          <span className="text-slate-400">ID:</span> {company?._id}
-        </p>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      {companyMsg && (
+        <div className={`rounded-md px-4 py-2 text-sm border ${
+          companyMsg.toLowerCase().includes('error')
+            ? 'bg-red-500/20 text-red-300 border-red-500/30'
+            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+        }`}>
+          {companyMsg}
+        </div>
+      )}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle>Resumen de la empresa</CardTitle>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={statusChanging}
+            onClick={handleToggleStatus}
+            className={company?.status === 'ACTIVE'
+              ? 'border-red-500/40 text-red-400 hover:bg-red-500/10'
+              : 'border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10'
+            }
+          >
+            {statusChanging
+              ? 'Cambiando…'
+              : company?.status === 'ACTIVE' ? 'Suspender empresa' : 'Reactivar empresa'
+            }
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+            <div>
+              <p className="text-xs text-slate-500">Nombre</p>
+              <p className="font-medium">{company?.name}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">RUT</p>
+              <p>{company?.rut || '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">Estado</p>
+              <span className={`inline-block mt-0.5 rounded px-2 py-0.5 text-xs font-medium ${
+                company?.status === 'ACTIVE'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                  : 'bg-red-500/20 text-red-300 border border-red-500/30'
+              }`}>
+                {company?.status === 'ACTIVE' ? 'Activa' : 'Suspendida'}
+              </span>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">Usuarios</p>
+              <p className="font-semibold text-sky-400">{company?.userCount ?? '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">Fecha de creación</p>
+              <p>{company?.createdAt ? new Date(company.createdAt).toLocaleDateString('es-CL') : '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">ID</p>
+              <p className="font-mono text-xs text-slate-500">{company?._id}</p>
+            </div>
+          </div>
+
+          {(company?.plan?.name || company?.plan?.userLimit || company?.plan?.storageLimitGb) && (
+            <div className="mt-4 rounded-lg border border-slate-700 bg-slate-800/50 p-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Plan</p>
+              <div className="grid grid-cols-3 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-slate-500">Nombre</p>
+                  <p>{company.plan.name || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Límite usuarios</p>
+                  <p>{company.plan.userLimit ?? '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Storage</p>
+                  <p>{company.plan.storageLimitGb != null ? `${company.plan.storageLimitGb} GB` : '—'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 
   const renderUsuarios = () => (

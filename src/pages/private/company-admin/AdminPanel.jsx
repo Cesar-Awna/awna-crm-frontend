@@ -7,7 +7,7 @@ import CompaniesService from '../../../services/Companies.js';
 import UsersService from '../../../services/Users.js';
 import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import LeadsService from '../../../services/Leads.js';
-import FunnelStagesService from '../../../services/FunnelStages.js';
+import { LEAD_STATUSES, getStatusLabel } from '../../../lib/leadFormMappers.js';
 import { FloatingAlert } from '../../../components/ui/floating-alert.jsx';
 
 const TABS = ['empresa', 'usuarios', 'unidades', 'leads'];
@@ -52,12 +52,10 @@ const AdminPanel = () => {
   // Leads tab state
   const [leads, setLeads] = useState([]);
   const [loadingLeads, setLoadingLeads] = useState(false);
-  const [leadStats, setLeadStats] = useState({ open: 0, wonThisMonth: 0, lostThisMonth: 0, atRisk: 0 });
-  const [funnelStages, setFunnelStages] = useState([]);
+  const [leadStats, setLeadStats] = useState({ total: 0, byStatus: {} });
   const [leadFilters, setLeadFilters] = useState({
     businessUnitId: '',
     ownerUserId: '',
-    stageId: '',
     status: '',
   });
   const [reassignModal, setReassignModal] = useState({ open: false, leadId: null });
@@ -160,12 +158,14 @@ const AdminPanel = () => {
         const params = {};
         if (leadFilters.businessUnitId) params.businessUnitId = leadFilters.businessUnitId;
         if (leadFilters.ownerUserId) params.ownerUserId = leadFilters.ownerUserId;
-        if (leadFilters.stageId) params.stageId = leadFilters.stageId;
         if (leadFilters.status) params.status = leadFilters.status;
+
+        const statsParams = {};
+        if (leadFilters.businessUnitId) statsParams.businessUnitId = leadFilters.businessUnitId;
 
         const [leadsRes, statsRes] = await Promise.all([
           LeadsService.getAll(params),
-          LeadsService.getStats(),
+          LeadsService.getStats(statsParams),
         ]);
 
         if (leadsRes?.success && Array.isArray(leadsRes.data)) {
@@ -187,23 +187,6 @@ const AdminPanel = () => {
 
     loadLeadsData();
   }, [activeTab, leadFilters]);
-
-  // Load funnel stages
-  useEffect(() => {
-    if (activeTab !== 'leads') return;
-
-    const loadStages = async () => {
-      try {
-        const res = await FunnelStagesService.getAll();
-        if (res?.success && Array.isArray(res.data)) {
-          setFunnelStages(res.data);
-        }
-      } catch {
-        setFunnelStages([]);
-      }
-    };
-    loadStages();
-  }, [activeTab]);
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
@@ -392,11 +375,6 @@ const AdminPanel = () => {
   const getBUName = (buId) => {
     const bu = businessUnits.find((b) => b._id === buId);
     return bu?.name || bu?.code || buId || '—';
-  };
-
-  const getStageName = (stageId) => {
-    const stage = funnelStages.find((s) => s._id === stageId);
-    return stage?.name || '—';
   };
 
   const formatDate = (dateStr) => {
@@ -798,26 +776,32 @@ const AdminPanel = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4">
-            <p className="text-xs text-slate-400 uppercase tracking-wide">Abiertos</p>
-            <p className="text-2xl font-bold text-emerald-400">{leadStats.open}</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wide">Total</p>
+            <p className="text-2xl font-bold text-slate-100">{leadStats.total}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <p className="text-xs text-slate-400 uppercase tracking-wide">Ganados (mes)</p>
-            <p className="text-2xl font-bold text-green-400">{leadStats.wonThisMonth}</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wide">Ganados</p>
+            <p className="text-2xl font-bold text-emerald-400">
+              {leadStats.wonCount || 0}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <p className="text-xs text-slate-400 uppercase tracking-wide">Perdidos (mes)</p>
-            <p className="text-2xl font-bold text-red-400">{leadStats.lostThisMonth}</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wide">Perdidos</p>
+            <p className="text-2xl font-bold text-rose-400">
+              {leadStats.lostCount || 0}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <p className="text-xs text-slate-400 uppercase tracking-wide">En riesgo</p>
-            <p className="text-2xl font-bold text-amber-400">{leadStats.atRisk}</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wide">No válidos</p>
+            <p className="text-2xl font-bold text-red-400">
+              {leadStats.invalidCount || 0}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -859,26 +843,15 @@ const AdminPanel = () => {
 
             <select
               className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
-              value={leadFilters.stageId}
-              onChange={(e) => setLeadFilters((f) => ({ ...f, stageId: e.target.value }))}
-            >
-              <option value="">Todas las etapas</option>
-              {funnelStages.map((s) => (
-                <option key={s._id} value={s._id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
               value={leadFilters.status}
               onChange={(e) => setLeadFilters((f) => ({ ...f, status: e.target.value }))}
             >
               <option value="">Todos los estados</option>
-              <option value="OPEN">Abierto</option>
-              <option value="WON">Ganado</option>
-              <option value="LOST">Perdido</option>
+              {LEAD_STATUSES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
             </select>
 
             <Button
@@ -886,7 +859,7 @@ const AdminPanel = () => {
               variant="outline"
               size="sm"
               onClick={() =>
-                setLeadFilters({ businessUnitId: '', ownerUserId: '', stageId: '', status: '' })
+                setLeadFilters({ businessUnitId: '', ownerUserId: '', status: '' })
               }
             >
               Limpiar filtros
@@ -918,62 +891,31 @@ const AdminPanel = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-700 text-left text-slate-400">
+                    <th className="pb-2 pr-4">Razón Social</th>
+                    <th className="pb-2 pr-4">RUT</th>
+                    <th className="pb-2 pr-4">Contacto</th>
                     <th className="pb-2 pr-4">Unidad</th>
                     <th className="pb-2 pr-4">Ejecutivo</th>
-                    <th className="pb-2 pr-4">Etapa</th>
                     <th className="pb-2 pr-4">Estado</th>
-                    <th className="pb-2 pr-4">Monto est.</th>
-                    <th className="pb-2 pr-4">Última act.</th>
-                    <th className="pb-2 pr-4">Alertas</th>
+                    <th className="pb-2 pr-4">Ingreso</th>
                     <th className="pb-2">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {leads.map((lead) => (
                     <tr key={lead._id} className="border-b border-slate-800">
+                      <td className="py-2 pr-4 text-xs">{lead.razonSocial || '—'}</td>
+                      <td className="py-2 pr-4 font-mono text-xs">{lead.rutEmpresa || '—'}</td>
+                      <td className="py-2 pr-4 text-xs">{lead.contactName || '—'}</td>
                       <td className="py-2 pr-4 text-xs">{getBUName(lead.businessUnitId)}</td>
-                      <td className="py-2 pr-4">{getUserName(lead.ownerUserId)}</td>
-                      <td className="py-2 pr-4">{getStageName(lead.currentStageId)}</td>
+                      <td className="py-2 pr-4 text-xs">{getUserName(lead.ownerUserId)}</td>
                       <td className="py-2 pr-4">
-                        <span
-                          className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
-                            lead.status === 'WON'
-                              ? 'bg-green-500/20 text-green-400'
-                              : lead.status === 'LOST'
-                              ? 'bg-red-500/20 text-red-400'
-                              : 'bg-slate-600/30 text-slate-300'
-                          }`}
-                        >
-                          {lead.status}
+                        <span className="inline-block rounded bg-slate-600/30 px-2 py-0.5 text-xs font-medium text-slate-300">
+                          {getStatusLabel(lead.status)}
                         </span>
                       </td>
-                      <td className="py-2 pr-4 text-right font-mono text-xs">
-                        {lead.estimatedAmount
-                          ? `$${lead.estimatedAmount.toLocaleString('es-CL')}`
-                          : '—'}
-                      </td>
                       <td className="py-2 pr-4 text-xs text-slate-400">
-                        {formatDate(lead.lastActivityAt)}
-                      </td>
-                      <td className="py-2 pr-4">
-                        {lead.isDormant && (
-                          <span className="mr-1 inline-block rounded bg-amber-500/20 px-1.5 py-0.5 text-xs text-amber-400">
-                            Dormido
-                          </span>
-                        )}
-                        {lead.stagnationLevel && (
-                          <span
-                            className={`inline-block rounded px-1.5 py-0.5 text-xs ${
-                              lead.stagnationLevel === 'CRITICAL'
-                                ? 'bg-red-500/20 text-red-400'
-                                : lead.stagnationLevel === 'OVERDUE'
-                                ? 'bg-orange-500/20 text-orange-400'
-                                : 'bg-yellow-500/20 text-yellow-400'
-                            }`}
-                          >
-                            {lead.stagnationLevel}
-                          </span>
-                        )}
+                        {formatDate(lead.createdAt)}
                       </td>
                       <td className="py-2 whitespace-nowrap">
                         <Button

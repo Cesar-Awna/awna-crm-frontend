@@ -9,7 +9,12 @@ import { FloatingAlert } from '../../components/ui/floating-alert.jsx';
 const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved === 'light' ? 'light' : 'dark';
+  });
   const navigate = useNavigate();
+  const logoSrc = theme === 'light' ? '/images/logo-dark.webp' : '/images/logo-white.webp';
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -50,10 +55,8 @@ const Login = () => {
     <div className="flex min-h-screen items-center justify-center bg-slate-950">
       <FloatingAlert message={errorMsg} onDismiss={() => setErrorMsg('')} variant="error" />
       <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950/80 p-8 shadow-2xl">
-        <div className="mb-6 flex flex-col items-center gap-2">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500 text-xl font-extrabold text-slate-950">
-            A
-          </div>
+        <div className="mb-6 flex flex-col items-center gap-3">
+          <img src={logoSrc} alt="AWNA CRM" className="h-16" />
           <div className="text-center">
             <h1 className="text-xl font-semibold text-slate-50">Awna CRM</h1>
             <p className="text-xs text-slate-400">Accede a tu panel comercial</p>

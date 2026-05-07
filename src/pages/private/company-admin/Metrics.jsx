@@ -1,46 +1,57 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Sidebar from '../../../components/Sidebar.jsx';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx';
 import MetricsService from '../../../services/Metrics.js';
-import FunnelStagesService from '../../../services/FunnelStages.js';
 import BusinessUnitsService from '../../../services/BusinessUnits.js';
+import { LEAD_STATUSES, getStatusLabel } from '../../../lib/leadFormMappers.js';
+
+const STATUS_COLORS = {
+  NUEVO: '#38bdf8',
+  DATO_ERRADO: '#f87171',
+  CONTACTADO: '#60a5fa',
+  INTERESADO: '#a78bfa',
+  COTIZACION_ENVIADA: '#fbbf24',
+  EN_SEGUIMIENTO: '#f97316',
+  CERRADO_GANADO: '#10b981',
+  CERRADO_PERDIDO: '#ef4444',
+};
+
+const ACTIVITY_PALETTE = [
+  '#38bdf8', '#10b981', '#60a5fa', '#4ade80',
+  '#a78bfa', '#fbbf24', '#f97316', '#94a3b8',
+  '#f43f5e', '#8b5cf6', '#06b6d4', '#84cc16',
+];
+
+const PERIODS = [
+  { value: 'today', label: 'Hoy' },
+  { value: 'week',  label: 'Semana' },
+  { value: 'month', label: 'Mes' },
+];
 
 const AdminMetrics = () => {
-  const [conversion, setConversion] = useState(null);
-  const [funnel, setFunnel] = useState([]);
-  const [summary, setSummary] = useState(null);
-  const [funnelStages, setFunnelStages] = useState([]);
-  const [businessUnits, setBusinessUnits] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [conversion, setConversion]         = useState(null);
+  const [summary, setSummary]               = useState(null);
+  const [businessUnits, setBusinessUnits]   = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [activityData, setActivityData]     = useState(null);
+  const [activityPeriod, setActivityPeriod] = useState('today');
+  const [activityBuId, setActivityBuId]     = useState('');
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        const [stagesRes, busRes] = await Promise.all([
-          FunnelStagesService.getAll(),
-          BusinessUnitsService.getAll(),
-        ]);
-        if (stagesRes?.success) setFunnelStages(stagesRes.data || []);
-        if (busRes?.success) setBusinessUnits(busRes.data || []);
-      } catch (e) {
-        console.error('Error loading initial data:', e);
-      }
-    };
-    loadInitialData();
+    BusinessUnitsService.getAll()
+      .then((res) => { if (res?.success) setBusinessUnits(res.data || []); })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     const loadMetrics = async () => {
       setLoading(true);
       try {
-        const [convRes, funnelRes, summaryRes] = await Promise.all([
+        const [convRes, summaryRes] = await Promise.all([
           MetricsService.getConversion(),
-          MetricsService.getFunnel(),
           MetricsService.getSummary(),
         ]);
-
         if (convRes?.success) setConversion(convRes.data);
-        if (funnelRes?.success) setFunnel(funnelRes.data?.byStage || []);
         if (summaryRes?.success) setSummary(summaryRes.data);
       } catch (e) {
         console.error('Error loading metrics:', e);
@@ -51,28 +62,28 @@ const AdminMetrics = () => {
     loadMetrics();
   }, []);
 
-  const getStageName = (stageId) => {
-    const stage = funnelStages.find((s) => s._id === stageId);
-    return stage?.name || 'Sin etapa';
-  };
+  useEffect(() => {
+    const params = { period: activityPeriod };
+    if (activityBuId) params.businessUnitId = activityBuId;
+    MetricsService.getActivity(params)
+      .then((res) => { if (res?.success) setActivityData(res.data); })
+      .catch(() => {});
+  }, [activityPeriod, activityBuId]);
 
-  const getStageOrder = (stageId) => {
-    const stage = funnelStages.find((s) => s._id === stageId);
-    return stage?.stageOrder || 999;
-  };
+  const total    = conversion?.total || 0;
+  const won      = conversion?.won || 0;
+  const lost     = conversion?.lost || 0;
+  const open     = conversion?.open || 0;
+  const byStatus = conversion?.byStatus || summary?.byStatus || {};
+  const maxCount = Math.max(...Object.values(byStatus), 1);
 
-  const sortedFunnel = useMemo(() => {
-    return [...funnel].sort((a, b) => getStageOrder(a._id) - getStageOrder(b._id));
-  }, [funnel, funnelStages]);
+  const displayStatuses = Object.keys(byStatus).length > 0
+    ? Object.keys(byStatus)
+    : LEAD_STATUSES.map((s) => s.value);
 
-  const maxFunnelCount = useMemo(() => {
-    return Math.max(...funnel.map((f) => f.count), 1);
-  }, [funnel]);
-
-  const total = conversion?.total || 0;
-  const won = conversion?.won || 0;
-  const lost = conversion?.lost || 0;
-  const open = conversion?.open || 0;
+  const activityTypes = activityData?.activityTypes || [];
+  const activityByType = activityData?.byType || {};
+  const maxActivity = Math.max(...activityTypes.map((a) => activityByType[a.key] || 0), activityData?.closures || 0, 1);
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-50">
@@ -81,7 +92,7 @@ const AdminMetrics = () => {
         <header className="mb-6">
           <h1 className="text-2xl font-semibold tracking-tight">Métricas de la Empresa</h1>
           <p className="text-xs text-slate-400">
-            Indicadores de conversión, pipeline y actividad.
+            Indicadores de conversión y distribución de leads por estado.
           </p>
         </header>
 
@@ -89,159 +100,166 @@ const AdminMetrics = () => {
           <p className="text-sm text-slate-400">Cargando métricas…</p>
         ) : (
           <>
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-5">
               <Card>
                 <CardContent className="pt-4">
-                  <p className="text-xs text-slate-400 uppercase tracking-wide">Total Leads</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Total leads</p>
                   <p className="text-2xl font-bold text-slate-100">{total}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-4">
-                  <p className="text-xs text-slate-400 uppercase tracking-wide">Abiertos</p>
-                  <p className="text-2xl font-bold text-blue-400">{open}</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-400">En gestión</p>
+                  <p className="text-2xl font-bold text-sky-400">{open}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-4">
-                  <p className="text-xs text-slate-400 uppercase tracking-wide">Ganados</p>
-                  <p className="text-2xl font-bold text-green-400">{won}</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Ganados</p>
+                  <p className="text-2xl font-bold text-emerald-400">{won}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-4">
-                  <p className="text-xs text-slate-400 uppercase tracking-wide">Perdidos</p>
-                  <p className="text-2xl font-bold text-red-400">{lost}</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Perdidos</p>
+                  <p className="text-2xl font-bold text-rose-400">{lost}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-4">
-                  <p className="text-xs text-slate-400 uppercase tracking-wide">Conversión</p>
-                  <p className="text-2xl font-bold text-emerald-400">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Conversión</p>
+                  <p className="text-2xl font-bold text-violet-400">
                     {conversion?.conversionRatePct || 0}%
                   </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Main content grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Funnel visualization */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Funnel de Ventas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {sortedFunnel.length === 0 ? (
-                    <p className="text-sm text-slate-400">No hay leads en el pipeline.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {sortedFunnel.map((item) => {
-                        const pct = Math.round((item.count / maxFunnelCount) * 100);
-                        return (
-                          <div key={item._id}>
-                            <div className="flex justify-between text-sm mb-1">
-                              <span className="text-slate-300">{getStageName(item._id)}</span>
-                              <span className="text-slate-400">{item.count} leads</span>
-                            </div>
-                            <div className="h-6 bg-slate-800 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full transition-all"
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Distribution by status */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Distribución por Estado</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {total === 0 ? (
-                    <p className="text-sm text-slate-400">No hay datos disponibles.</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Visual distribution bars */}
-                      <div className="flex h-8 rounded-lg overflow-hidden">
-                        {open > 0 && (
-                          <div
-                            className="bg-blue-500 flex items-center justify-center text-xs font-medium"
-                            style={{ width: `${(open / total) * 100}%` }}
-                          >
-                            {open > 0 && Math.round((open / total) * 100) >= 10 && 'Abiertos'}
-                          </div>
-                        )}
-                        {won > 0 && (
-                          <div
-                            className="bg-green-500 flex items-center justify-center text-xs font-medium"
-                            style={{ width: `${(won / total) * 100}%` }}
-                          >
-                            {won > 0 && Math.round((won / total) * 100) >= 10 && 'Ganados'}
-                          </div>
-                        )}
-                        {lost > 0 && (
-                          <div
-                            className="bg-red-500 flex items-center justify-center text-xs font-medium"
-                            style={{ width: `${(lost / total) * 100}%` }}
-                          >
-                            {lost > 0 && Math.round((lost / total) * 100) >= 10 && 'Perdidos'}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Legend */}
-                      <div className="grid grid-cols-3 gap-4 text-center">
-                        <div>
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="h-3 w-3 rounded-full bg-blue-500" />
-                            <span className="text-sm text-slate-300">Abiertos</span>
-                          </div>
-                          <p className="text-lg font-bold text-blue-400">
-                            {open} ({total > 0 ? Math.round((open / total) * 100) : 0}%)
-                          </p>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="h-3 w-3 rounded-full bg-green-500" />
-                            <span className="text-sm text-slate-300">Ganados</span>
-                          </div>
-                          <p className="text-lg font-bold text-green-400">
-                            {won} ({total > 0 ? Math.round((won / total) * 100) : 0}%)
-                          </p>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="h-3 w-3 rounded-full bg-red-500" />
-                            <span className="text-sm text-slate-300">Perdidos</span>
-                          </div>
-                          <p className="text-lg font-bold text-red-400">
-                            {lost} ({total > 0 ? Math.round((lost / total) * 100) : 0}%)
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Activity summary */}
-            <Card className="mt-6">
+            <Card className="mb-6">
               <CardHeader>
-                <CardTitle>Resumen de Actividad</CardTitle>
+                <CardTitle>Distribución por estado</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {total === 0 ? (
+                  <p className="text-sm text-slate-400">No hay datos disponibles.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {displayStatuses.map((statusKey) => {
+                      const count = byStatus[statusKey] || 0;
+                      const pct = Math.round((count / maxCount) * 100);
+                      const label = getStatusLabel(statusKey) || statusKey;
+                      const color = STATUS_COLORS[statusKey] || '#94a3b8';
+                      return (
+                        <div key={statusKey}>
+                          <div className="mb-1 flex justify-between text-sm">
+                            <span className="text-slate-300">{label}</span>
+                            <span className="text-slate-400">{count} leads</span>
+                          </div>
+                          <div className="h-6 overflow-hidden rounded-full bg-slate-800">
+                            <div
+                              className="h-full rounded-full transition-all"
+                              style={{
+                                width: `${pct}%`,
+                                backgroundColor: color,
+                                opacity: 0.85,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Actividad por tipo */}
+            <Card className="mb-6">
+              <CardHeader>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <CardTitle>Actividad registrada</CardTitle>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      className="h-8 rounded-md border border-slate-700 bg-slate-900 px-2 text-xs text-slate-50"
+                      value={activityBuId}
+                      onChange={(e) => setActivityBuId(e.target.value)}
+                    >
+                      <option value="">Todas las unidades</option>
+                      {businessUnits.map((bu) => (
+                        <option key={bu._id} value={bu._id}>
+                          {bu.code} — {bu.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="flex gap-1 rounded-lg bg-slate-800 p-1">
+                      {PERIODS.map((p) => (
+                        <button
+                          key={p.value}
+                          onClick={() => setActivityPeriod(p.value)}
+                          className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+                            activityPeriod === p.value
+                              ? 'bg-slate-600 text-slate-100'
+                              : 'text-slate-400 hover:text-slate-300'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {activityTypes.length === 0 && !activityData ? (
+                  <p className="text-sm text-slate-400">Selecciona una unidad de negocio para ver la actividad.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {[
+                      ...activityTypes.map((a, i) => ({
+                        key:   a.key,
+                        label: a.label,
+                        count: activityByType[a.key] || 0,
+                        color: ACTIVITY_PALETTE[i % ACTIVITY_PALETTE.length],
+                      })),
+                      {
+                        key:   'closures',
+                        label: 'Cierres (ganados)',
+                        count: activityData?.closures || 0,
+                        color: '#10b981',
+                      },
+                    ].map((row) => (
+                      <div key={row.key} className="flex items-center gap-3">
+                        <span className="w-44 flex-shrink-0 text-xs text-slate-400">{row.label}</span>
+                        <div className="flex-1 overflow-hidden rounded-full bg-slate-700 h-2">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${Math.round((row.count / maxActivity) * 100)}%`,
+                              backgroundColor: row.color,
+                            }}
+                          />
+                        </div>
+                        <span
+                          className="w-8 text-right text-sm font-semibold tabular-nums"
+                          style={{ color: row.color }}
+                        >
+                          {row.count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Resumen</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-purple-400">
+                    <p className="text-3xl font-bold text-violet-400">
                       {summary?.totalEvents || 0}
                     </p>
                     <p className="text-sm text-slate-400">Eventos registrados</p>
@@ -253,40 +271,8 @@ const AdminMetrics = () => {
                     <p className="text-sm text-slate-400">Tasa de conversión</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-blue-400">{businessUnits.length}</p>
+                    <p className="text-3xl font-bold text-sky-400">{businessUnits.length}</p>
                     <p className="text-sm text-slate-400">Unidades de negocio</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-3xl font-bold text-amber-400">{funnelStages.length}</p>
-                    <p className="text-sm text-slate-400">Etapas del funnel</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Conversion insights */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Insights de Conversión</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="rounded-lg bg-slate-800/50 p-4">
-                    <p className="text-sm text-slate-400 mb-1">Leads cerrados</p>
-                    <p className="text-xl font-bold text-slate-100">{won + lost}</p>
-                    <p className="text-xs text-slate-500">Ganados + Perdidos</p>
-                  </div>
-                  <div className="rounded-lg bg-slate-800/50 p-4">
-                    <p className="text-sm text-slate-400 mb-1">Win Rate</p>
-                    <p className="text-xl font-bold text-green-400">
-                      {won + lost > 0 ? Math.round((won / (won + lost)) * 100) : 0}%
-                    </p>
-                    <p className="text-xs text-slate-500">De leads cerrados</p>
-                  </div>
-                  <div className="rounded-lg bg-slate-800/50 p-4">
-                    <p className="text-sm text-slate-400 mb-1">Pipeline activo</p>
-                    <p className="text-xl font-bold text-blue-400">{open}</p>
-                    <p className="text-xs text-slate-500">Leads en proceso</p>
                   </div>
                 </div>
               </CardContent>
