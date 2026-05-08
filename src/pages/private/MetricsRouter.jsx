@@ -5,7 +5,8 @@ import { getStoredRole } from '../../lib/session.js';
 
 const MetricsRouter = () => {
   const role = getStoredRole();
-  if (role === 'COMPANY_ADMIN' || role === 'SUPERVISOR') return <AdminMetrics />;
+  if (role === 'SUPERVISOR') return <SupervisorMetrics />;
+  if (role === 'COMPANY_ADMIN') return <AdminMetrics />;
   return <SupervisorMetrics />;
 };
 
