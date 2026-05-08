@@ -602,19 +602,40 @@ const Users = () => {
                 {businessUnits.length === 0 ? (
                   <p className="text-sm text-slate-400">No hay unidades de negocio creadas.</p>
                 ) : (
-                  <div className="space-y-2">
-                    {businessUnits.map((bu) => (
-                      <label key={bu._id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-slate-800/50 p-2 rounded">
-                        <input
-                          type="checkbox"
-                          checked={selectedBUs.includes(bu._id)}
-                          onChange={() => toggleBU(bu._id)}
-                          className="rounded border-slate-600 bg-slate-900"
-                        />
-                        <span>{bu.code} — {bu.name}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <>
+                    {(editingUser?.roleName === 'SUPERVISOR' || editingUser?.roleName === 'EXECUTIVE') && (
+                      <div className="bg-blue-500/10 border border-blue-500/30 rounded px-3 py-2 text-xs text-blue-300">
+                        {editingUser?.roleName === 'SUPERVISOR' ? 'Un supervisor solo puede tener 1 unidad de negocio' : 'Un ejecutivo solo puede tener 1 unidad de negocio'}
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      {businessUnits.map((bu) => {
+                        const isSingleRole = editingUser?.roleName === 'SUPERVISOR' || editingUser?.roleName === 'EXECUTIVE';
+                        return isSingleRole ? (
+                          <label key={bu._id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-slate-800/50 p-2 rounded">
+                            <input
+                              type="radio"
+                              name="businessUnit"
+                              checked={selectedBUs.includes(bu._id)}
+                              onChange={() => setSelectedBUs([bu._id])}
+                              className="rounded border-slate-600 bg-slate-900"
+                            />
+                            <span>{bu.code} — {bu.name}</span>
+                          </label>
+                        ) : (
+                          <label key={bu._id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-slate-800/50 p-2 rounded">
+                            <input
+                              type="checkbox"
+                              checked={selectedBUs.includes(bu._id)}
+                              onChange={() => toggleBU(bu._id)}
+                              className="rounded border-slate-600 bg-slate-900"
+                            />
+                            <span>{bu.code} — {bu.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
                 <div className="flex gap-2 border-t border-slate-800 pt-4">
                   <Button
