@@ -16,7 +16,7 @@ const ROLE_COLORS = {
 };
 
 const EMPTY_USER = {
-  fullName: '', email: '', password: '', roleName: 'EXECUTIVE', phone: '',
+  fullName: '', email: '', password: '', roleName: 'EXECUTIVE', phone: '', supervisorId: '',
 };
 
 const Users = () => {
@@ -25,6 +25,7 @@ const Users = () => {
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [businessUnits, setBusinessUnits] = useState([]);
+  const [supervisors, setSupervisors] = useState([]);
   const pagination = usePagination(1, 20);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -75,9 +76,21 @@ const Users = () => {
     }
   };
 
+  const loadSupervisors = async () => {
+    try {
+      const res = await UsersService.getSupervisors({ page: 1, limit: 1000 });
+      if (res?.success && Array.isArray(res.data)) {
+        setSupervisors(res.data);
+      }
+    } catch (e) {
+      console.error('Error loading supervisors:', e);
+    }
+  };
+
   useEffect(() => {
     loadUsers();
     loadBusinessUnits();
+    loadSupervisors();
   }, []);
 
   useEffect(() => {
@@ -93,13 +106,17 @@ const Users = () => {
     setCreatingUser(true);
     setError(null);
     try {
-      const res = await UsersService.create({
+      const payload = {
         fullName: createForm.fullName.trim(),
         email: createForm.email.trim().toLowerCase(),
         password: createForm.password,
         roleName: createForm.roleName,
         phone: createForm.phone?.trim() || undefined,
-      });
+      };
+      if (createForm.roleName === 'EXECUTIVE' && createForm.supervisorId) {
+        payload.supervisorId = createForm.supervisorId;
+      }
+      const res = await UsersService.create(payload);
       if (res?.success) {
         setShowCreateModal(false);
         setCreateForm(EMPTY_USER);
@@ -415,12 +432,27 @@ const Users = () => {
                   <select
                     className="flex h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
                     value={createForm.roleName}
-                    onChange={(e) => setCreateForm((f) => ({ ...f, roleName: e.target.value }))}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, roleName: e.target.value, supervisorId: '' }))}
                   >
                     <option value="EXECUTIVE">Ejecutivo</option>
                     <option value="SUPERVISOR">Supervisor</option>
                   </select>
                 </div>
+                {createForm.roleName === 'EXECUTIVE' && (
+                  <div>
+                    <label className="mb-1 block text-sm text-slate-400">Supervisor</label>
+                    <select
+                      className="flex h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
+                      value={createForm.supervisorId}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, supervisorId: e.target.value }))}
+                    >
+                      <option value="">Seleccionar supervisor</option>
+                      {supervisors.map((sup) => (
+                        <option key={sup._id} value={sup._id}>{sup.fullName}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="flex gap-2 border-t border-slate-800 pt-4">
                   <Button
                     type="button"
