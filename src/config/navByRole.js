@@ -43,7 +43,6 @@ const COMPANY_ADMIN = [
 const SUPER_ADMIN = [
   { key: 'companies',    label: 'Empresas',        to: '/companies',   icon: Building2 },
   { key: 'monitoring',   label: 'Monitoreo',       to: '/monitoring',  icon: Activity },
-  { key: 'support',      label: 'Soporte',         to: '/support',     icon: HeadphonesIcon },
   { key: 'profile',      label: 'Perfil',          to: '/profile',     icon: User },
 ];
 
