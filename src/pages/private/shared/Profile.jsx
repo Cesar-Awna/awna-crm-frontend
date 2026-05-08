@@ -38,6 +38,7 @@ const Profile = () => {
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({ fullName: '', phone: '' });
   const [saving, setSaving] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -336,65 +337,12 @@ const Profile = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                {false ? (
-                  <form className="max-w-md space-y-4">
-                    <div>
-                      <label className="mb-1 block text-sm text-slate-400">Contraseña actual</label>
-                      <Input
-                        type="password"
-                        value={passwordForm.currentPassword}
-                        onChange={(e) =>
-                          setPasswordForm((f) => ({ ...f, currentPassword: e.target.value }))
-                        }
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm text-slate-400">Nueva contraseña</label>
-                      <Input
-                        type="password"
-                        value={passwordForm.newPassword}
-                        onChange={(e) =>
-                          setPasswordForm((f) => ({ ...f, newPassword: e.target.value }))
-                        }
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm text-slate-400">
-                        Confirmar nueva contraseña
-                      </label>
-                      <Input
-                        type="password"
-                        value={passwordForm.confirmPassword}
-                        onChange={(e) =>
-                          setPasswordForm((f) => ({ ...f, confirmPassword: e.target.value }))
-                        }
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <Button type="submit" disabled={changingPassword}>
-                        {changingPassword ? 'Cambiando…' : 'Cambiar contraseña'}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setShowPasswordForm(false);
-                          setPasswordForm({
-                            currentPassword: '',
-                            newPassword: '',
-                            confirmPassword: '',
-                          });
-                        }}
-                      >
-                        Cancelar
-                      </Button>
-                    </div>
-                  </form>
+                {showPasswordForm ? (
+                  <ChangePasswordCard onClose={() => setShowPasswordForm(false)} />
                 ) : (
-                  <ChangePasswordCard />
+                  <p className="text-sm text-slate-400">
+                    Haz clic en "Cambiar contraseña" para actualizar tu contraseña.
+                  </p>
                 )}
               </CardContent>
             </Card>

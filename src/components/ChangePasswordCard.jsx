@@ -4,7 +4,7 @@ import { Button } from './ui/button.jsx';
 import { Input } from './ui/input.jsx';
 import { useChangePassword } from '../hooks/useChangePassword.js';
 
-const ChangePasswordCard = () => {
+const ChangePasswordCard = ({ onClose }) => {
   const { changePassword, loading, error, success, setError, setSuccess } = useChangePassword();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -106,6 +106,7 @@ const ChangePasswordCard = () => {
                 setNewPassword('');
                 setConfirmPassword('');
                 setError(null);
+                if (onClose) onClose();
               }}
               disabled={loading}
             >
