@@ -194,32 +194,61 @@ const AdminLeads = () => {
           </Button>
         </header>
 
-        <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">En gestión</p>
-              <p className="text-2xl font-bold text-sky-400">{leadStats.openCount || 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Ganados</p>
-              <p className="text-2xl font-bold text-emerald-400">{leadStats.wonCount || 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Perdidos</p>
-              <p className="text-2xl font-bold text-rose-400">{leadStats.lostCount || 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">No válidos</p>
-              <p className="text-2xl font-bold text-red-400">{leadStats.invalidCount || 0}</p>
-            </CardContent>
-          </Card>
-        </div>
+        {loadingLeads ? (
+          <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <Card>
+              <CardContent className="pt-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">En gestión</p>
+                <div className="h-8 bg-slate-800 rounded animate-pulse mt-2"></div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Ganados</p>
+                <div className="h-8 bg-slate-800 rounded animate-pulse mt-2"></div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Perdidos</p>
+                <div className="h-8 bg-slate-800 rounded animate-pulse mt-2"></div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">No válidos</p>
+                <div className="h-8 bg-slate-800 rounded animate-pulse mt-2"></div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <Card>
+              <CardContent className="pt-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">En gestión</p>
+                <p className="text-2xl font-bold text-sky-400">{leadStats.openCount || 0}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Ganados</p>
+                <p className="text-2xl font-bold text-emerald-400">{leadStats.wonCount || 0}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Perdidos</p>
+                <p className="text-2xl font-bold text-rose-400">{leadStats.lostCount || 0}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">No válidos</p>
+                <p className="text-2xl font-bold text-red-400">{leadStats.invalidCount || 0}</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         <Card className="mb-6">
           <CardHeader>
