@@ -117,6 +117,28 @@ const SupervisorMetrics = () => {
 
   const getMetric = (execId, key, fallback = 0) => metricsData[execId]?.[key] ?? fallback;
 
+  const handleRefreshMetrics = async () => {
+    try {
+      const usersRes = await UsersService.getExecutives();
+      if (usersRes?.success && Array.isArray(usersRes.data)) {
+        const metrics = {};
+        for (const exec of usersRes.data) {
+          try {
+            const res = await LeadsService.getStats({ ownerUserId: exec._id });
+            if (res?.success && res.data) {
+              metrics[exec._id] = res.data;
+            }
+          } catch (e) {
+            console.error(`Error loading metrics for ${exec._id}:`, e);
+          }
+        }
+        setMetricsData(metrics);
+      }
+    } catch (e) {
+      console.error('Error refreshing metrics:', e);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-50">
       <Sidebar />
@@ -310,8 +332,14 @@ const SupervisorMetrics = () => {
             </Card>
 
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Desempeño por ejecutivo</CardTitle>
+                <button
+                  onClick={handleRefreshMetrics}
+                  className="text-xs px-3 py-1 rounded border border-slate-700 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                >
+                  🔄 Refrescar
+                </button>
               </CardHeader>
               <CardContent>
                 {executives.length === 0 ? (
