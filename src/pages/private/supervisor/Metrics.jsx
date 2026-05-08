@@ -4,7 +4,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui
 import MetricsService from '../../../services/Metrics.js';
 import UsersService from '../../../services/Users.js';
 import LeadsService from '../../../services/Leads.js';
-import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import { LEAD_STATUSES, getStatusLabel } from '../../../lib/leadFormMappers.js';
 
 const STATUS_COLORS = {
@@ -33,19 +32,11 @@ const PERIODS = [
 const SupervisorMetrics = () => {
   const [conversion, setConversion]         = useState(null);
   const [summary, setSummary]               = useState(null);
-  const [businessUnits, setBusinessUnits]   = useState([]);
   const [loading, setLoading]               = useState(true);
   const [activityData, setActivityData]     = useState(null);
   const [activityPeriod, setActivityPeriod] = useState('today');
-  const [activityBuId, setActivityBuId]     = useState('');
   const [executives, setExecutives]         = useState([]);
   const [metricsData, setMetricsData]       = useState({});
-
-  useEffect(() => {
-    BusinessUnitsService.getAll()
-      .then((res) => { if (res?.success) setBusinessUnits(res.data || []); })
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     const loadMetrics = async () => {
@@ -68,11 +59,10 @@ const SupervisorMetrics = () => {
 
   useEffect(() => {
     const params = { period: activityPeriod };
-    if (activityBuId) params.businessUnitId = activityBuId;
     MetricsService.getActivity(params)
       .then((res) => { if (res?.success) setActivityData(res.data); })
       .catch(() => {});
-  }, [activityPeriod, activityBuId]);
+  }, [activityPeriod]);
 
   useEffect(() => {
     const loadExecutives = async () => {
@@ -231,34 +221,20 @@ const SupervisorMetrics = () => {
               <CardHeader>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <CardTitle>Actividad registrada</CardTitle>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <select
-                      className="h-8 rounded-md border border-slate-700 bg-slate-900 px-2 text-xs text-slate-50"
-                      value={activityBuId}
-                      onChange={(e) => setActivityBuId(e.target.value)}
-                    >
-                      <option value="">Todas las unidades</option>
-                      {businessUnits.map((bu) => (
-                        <option key={bu._id} value={bu._id}>
-                          {bu.code} — {bu.name}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="flex gap-1 rounded-lg bg-slate-800 p-1">
-                      {PERIODS.map((p) => (
-                        <button
-                          key={p.value}
-                          onClick={() => setActivityPeriod(p.value)}
-                          className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-                            activityPeriod === p.value
-                              ? 'bg-slate-600 text-slate-100'
-                              : 'text-slate-400 hover:text-slate-300'
-                          }`}
-                        >
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
+                  <div className="flex gap-1 rounded-lg bg-slate-800 p-1">
+                    {PERIODS.map((p) => (
+                      <button
+                        key={p.value}
+                        onClick={() => setActivityPeriod(p.value)}
+                        className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+                          activityPeriod === p.value
+                            ? 'bg-slate-600 text-slate-100'
+                            : 'text-slate-400 hover:text-slate-300'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </CardHeader>
