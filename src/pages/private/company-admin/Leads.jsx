@@ -103,7 +103,23 @@ const AdminLeads = () => {
         }
 
         if (statsRes?.success && statsRes.data) {
-          setLeadStats(statsRes.data);
+          const stats = statsRes.data;
+          const byStatus = stats.byStatus || {};
+          const openCount = Object.entries(byStatus)
+            .filter(([status]) => !['CERRADO_GANADO', 'CERRADO_PERDIDO', 'DATO_ERRADO'].includes(status))
+            .reduce((sum, [, count]) => sum + count, 0);
+          const wonCount = byStatus.CERRADO_GANADO || 0;
+          const lostCount = byStatus.CERRADO_PERDIDO || 0;
+          const invalidCount = byStatus.DATO_ERRADO || 0;
+
+          setLeadStats({
+            total: stats.total || 0,
+            openCount,
+            wonCount,
+            lostCount,
+            invalidCount,
+            byStatus,
+          });
         }
       } catch (e) {
         console.error('Error loading leads:', e);
