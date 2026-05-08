@@ -34,10 +34,15 @@ const SUPERVISOR = [
 ];
 
 const COMPANY_ADMIN = [
-  ...SUPERVISOR,
-  { key: 'users',        label: 'Usuarios',           to: '/users',        icon: Users },
-  { key: 'admin',        label: 'Panel Admin',        to: '/admin',        icon: LayoutGrid },
-  { key: 'form-builder', label: 'Constructor de Form', to: '/form-builder', icon: FormInput  },
+  { key: 'metrics',      label: 'Métricas',         to: '/metrics',     icon: BarChart2 },
+  { key: 'admin',        label: 'Panel Admin',       to: '/admin',       icon: LayoutGrid },
+  { key: 'form-builder', label: 'Constructor de Form', to: '/form-builder', icon: FormInput },
+  { key: 'leads',        label: 'Leads',             to: '/leads',       icon: Users },
+  { key: 'ranking',      label: 'Ranking',           to: '/ranking',     icon: Trophy },
+  { key: 'users',        label: 'Usuarios',          to: '/users',       icon: Users },
+  { key: 'assignments',  label: 'Asignaciones',      to: '/assignments', icon: ClipboardList },
+  { key: 'notifications',label: 'Notificaciones',    to: '/notifications',icon: Bell },
+  { key: 'profile',      label: 'Perfil',            to: '/profile',     icon: User },
 ];
 
 const SUPER_ADMIN = [
