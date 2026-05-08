@@ -182,7 +182,7 @@ const AdminLeads = () => {
           <Card>
             <CardContent className="pt-4">
               <p className="text-xs uppercase tracking-wide text-slate-400">En gestión</p>
-              <p className="text-2xl font-bold text-sky-400">{leadStats.openCount ?? openCount}</p>
+              <p className="text-2xl font-bold text-sky-400">{leadStats.openCount || 0}</p>
             </CardContent>
           </Card>
           <Card>
