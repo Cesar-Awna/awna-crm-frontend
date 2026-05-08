@@ -98,7 +98,7 @@ const Sidebar = () => {
       </div>
 
       <aside className="hidden h-screen w-64 flex-col border-r border-[var(--border-color)] bg-[var(--sidebar-bg)] px-4 py-6 lg:flex lg:sticky lg:top-0 lg:overflow-y-auto">
-        <div className="mb-6">
+        <div className="mb-6 flex flex-col items-center text-center">
           <img src={logoSrc} alt="AWNA CRM" className="h-12 mb-3" />
           <div className="text-xs text-slate-400 font-medium">
             {roleName ? roleName.replace(/_/g, ' ') : 'Panel'}
