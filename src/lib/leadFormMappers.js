@@ -105,9 +105,11 @@ export function buildLeadPayload(f, options = {}) {
     if (f.observation)  payload.observation  = f.observation;
   }
 
+  // Common fields for both edit and create
+  if (f.nextContactDate) payload.nextContactDate = f.nextContactDate;
+  if (f.nextActionType) payload.nextActionType = f.nextActionType;
+
   if (isEdit) {
-    payload.nextContactDate     = f.nextContactDate     || undefined;
-    payload.nextActionType      = f.nextActionType      || undefined;
     if (f.activityCounts && Object.keys(f.activityCounts).length > 0) {
       payload.activityCounts = f.activityCounts;
     }
