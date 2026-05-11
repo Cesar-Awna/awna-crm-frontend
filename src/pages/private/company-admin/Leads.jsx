@@ -9,6 +9,7 @@ import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import { LEAD_STATUSES, getStatusLabel } from '../../../lib/leadFormMappers.js';
 import { usePagination } from '../../../hooks/usePagination.js';
 import PaginationControls from '../../../components/PaginationControls.jsx';
+import LeadImportModal from '../../../components/LeadImportModal.jsx';
 
 const getLeadField = (lead, key) => lead?.fields?.[key] ?? lead?.[key] ?? '—';
 
@@ -40,6 +41,7 @@ const AdminLeads = () => {
   const [reassigning, setReassigning] = useState(false);
   const [message, setMessage] = useState(null);
   const [activeBuSchema, setActiveBuSchema] = useState([]);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const pagination = usePagination(1, 20);
 
   useEffect(() => {
@@ -159,6 +161,15 @@ const AdminLeads = () => {
     }
   };
 
+  const handleImportSuccess = async () => {
+    setMessage('Leads importados correctamente.');
+    const leadsRes = await LeadsService.getAll(leadFilters);
+    if (leadsRes?.success && Array.isArray(leadsRes.data)) {
+      setLeads(leadsRes.data);
+      pagination.updatePaginationData(leadsRes.pagination);
+    }
+  };
+
   const getUserName = (userId) => {
     const user = users.find((u) => u._id === userId);
     return user?.fullName || '—';
@@ -189,9 +200,14 @@ const AdminLeads = () => {
               Vista administrativa: todos los leads, filtros y reasignaciones.
             </p>
           </div>
-          <Button type="button" onClick={() => navigate('/leads/new')}>
-            + Nuevo lead
-          </Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={() => setImportModalOpen(true)}>
+              ⬆ Importar Excel
+            </Button>
+            <Button type="button" onClick={() => navigate('/leads/new')}>
+              + Nuevo lead
+            </Button>
+          </div>
         </header>
 
         {loadingLeads ? (
@@ -477,6 +493,12 @@ const AdminLeads = () => {
             </Card>
           </div>
         )}
+
+        <LeadImportModal
+          isOpen={importModalOpen}
+          onClose={() => setImportModalOpen(false)}
+          onSuccess={handleImportSuccess}
+        />
       </main>
     </div>
   );
