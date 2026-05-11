@@ -51,6 +51,7 @@ export function mapApiLeadToFormState(lead, schema = []) {
     emailSentCount:      lead.emailSentCount      ?? 0,
     quoteSentCount:      lead.quoteSentCount       ?? 0,
     rescheduleCount:     lead.rescheduleCount     ?? 0,
+    closureCount:        lead.closureCount        ?? 0,
   };
 
   if (schema.length > 0) {
@@ -116,6 +117,7 @@ export function buildLeadPayload(f, options = {}) {
     payload.emailSentCount      = Number(f.emailSentCount      ?? 0);
     payload.quoteSentCount      = Number(f.quoteSentCount      ?? 0);
     payload.rescheduleCount     = Number(f.rescheduleCount     ?? 0);
+    payload.closureCount        = Number(f.closureCount        ?? 0);
   }
 
   if (!isEdit) {
