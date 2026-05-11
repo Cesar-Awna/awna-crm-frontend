@@ -126,10 +126,10 @@ const MyDay = () => {
                       >
                         <div>
                           <p className="text-sm font-medium text-emerald-300">
-                            {lead.fields?.['Razón Social'] || lead.razonSocial || '—'}
+                            {lead.fields?.['Razón Social'] || lead.fields?.razonSocial || lead.razonSocial || '—'}
                           </p>
                           <p className="text-xs text-slate-400">
-                            {lead.fields?.Nombre || lead.nombreContacto || '—'} {lead.fields?.Apellido || lead.apellido || ''}
+                            {lead.fields?.Nombre || lead.fields?.nombreContacto || lead.nombreContacto || '—'} {lead.fields?.Apellido || lead.fields?.apellido || lead.apellido || ''}
                           </p>
                         </div>
                         <div className="text-right">
@@ -161,10 +161,10 @@ const MyDay = () => {
                         >
                           <div>
                             <p className="text-sm font-medium text-orange-300">
-                              {lead.fields?.['Razón Social'] || lead.razonSocial || '—'}
+                              {lead.fields?.['Razón Social'] || lead.fields?.razonSocial || lead.razonSocial || '—'}
                             </p>
                             <p className="text-xs text-slate-400">
-                              {lead.fields?.Nombre || lead.nombreContacto || '—'} {lead.fields?.Apellido || lead.apellido || ''}
+                              {lead.fields?.Nombre || lead.fields?.nombreContacto || lead.nombreContacto || '—'} {lead.fields?.Apellido || lead.fields?.apellido || lead.apellido || ''}
                             </p>
                           </div>
                           <div className="text-right">
