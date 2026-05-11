@@ -37,17 +37,20 @@ const SupervisorMetrics = () => {
   const [activityPeriod, setActivityPeriod] = useState('today');
   const [executives, setExecutives]         = useState([]);
   const [metricsData, setMetricsData]       = useState({});
+  const [counters, setCounters]             = useState(null);
 
   useEffect(() => {
     const loadMetrics = async () => {
       setLoading(true);
       try {
-        const [convRes, summaryRes] = await Promise.all([
+        const [convRes, summaryRes, countersRes] = await Promise.all([
           MetricsService.getConversion(),
           MetricsService.getSummary(),
+          MetricsService.getActivityCounters(),
         ]);
         if (convRes?.success) setConversion(convRes.data);
         if (summaryRes?.success) setSummary(summaryRes.data);
+        if (countersRes?.success) setCounters(countersRes.data);
       } catch (e) {
         console.error('Error loading metrics:', e);
       } finally {
@@ -178,6 +181,53 @@ const SupervisorMetrics = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Contadores de Actividad */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Contadores de Actividad del Equipo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {counters ? (
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4 text-center">
+                      <p className="text-xs uppercase text-slate-400 mb-1">Llamadas realizadas</p>
+                      <p className="text-3xl font-bold text-sky-400">{counters.callCount}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4 text-center">
+                      <p className="text-xs uppercase text-slate-400 mb-1">Contactos efectivos</p>
+                      <p className="text-3xl font-bold text-emerald-400">{counters.contactSuccessCount}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4 text-center">
+                      <p className="text-xs uppercase text-slate-400 mb-1">Seguimientos</p>
+                      <p className="text-3xl font-bold text-violet-400">{counters.followupCount}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4 text-center">
+                      <p className="text-xs uppercase text-slate-400 mb-1">WhatsApp enviados</p>
+                      <p className="text-3xl font-bold text-green-400">{counters.whatsappSentCount}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4 text-center">
+                      <p className="text-xs uppercase text-slate-400 mb-1">Correos enviados</p>
+                      <p className="text-3xl font-bold text-blue-400">{counters.emailSentCount}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4 text-center">
+                      <p className="text-xs uppercase text-slate-400 mb-1">Cotizaciones enviadas</p>
+                      <p className="text-3xl font-bold text-yellow-400">{counters.quoteSentCount}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4 text-center">
+                      <p className="text-xs uppercase text-slate-400 mb-1">Reagendamientos</p>
+                      <p className="text-3xl font-bold text-orange-400">{counters.rescheduleCount}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4 text-center">
+                      <p className="text-xs uppercase text-slate-400 mb-1">Cierres (ventas)</p>
+                      <p className="text-3xl font-bold text-rose-400">{counters.closureCount}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">Cargando contadores...</p>
+                )}
+              </CardContent>
+            </Card>
 
             <Card className="mb-6">
               <CardHeader>
