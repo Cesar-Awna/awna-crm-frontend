@@ -129,7 +129,7 @@ const MyDay = () => {
                             {lead.fields?.['Razón Social'] || lead.fields?.razonSocial || lead.razonSocial || '—'}
                           </p>
                           <p className="text-xs text-slate-400">
-                            {lead.fields?.Telefono || lead.fields?.telefono || lead.contactPhone || '—'}
+                            {lead.contactPhone || lead.fields?.Telefono || lead.fields?.telefono || '—'}
                           </p>
                         </div>
                         <div className="text-right">
@@ -164,7 +164,7 @@ const MyDay = () => {
                               {lead.fields?.['Razón Social'] || lead.fields?.razonSocial || lead.razonSocial || '—'}
                             </p>
                             <p className="text-xs text-slate-400">
-                              {lead.fields?.Telefono || lead.fields?.telefono || lead.contactPhone || '—'}
+                              {lead.contactPhone || lead.fields?.Telefono || lead.fields?.telefono || '—'}
                             </p>
                           </div>
                           <div className="text-right">
