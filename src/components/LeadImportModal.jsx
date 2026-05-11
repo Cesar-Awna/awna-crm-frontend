@@ -11,8 +11,7 @@ const LeadImportModal = ({ isOpen, onClose, onSuccess, buSchema }) => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  const REQUIRED_COLUMNS = ['razonSocial', 'rutEmpresa', 'nombreContacto', 'correo', 'telefono'];
-  const OPTIONAL_COLUMNS = ['executiveEmail'];
+  const REQUIRED_COLUMNS = ['Nombre', 'Apellido', 'Rut Empresa', 'Telefono', 'Correo', 'Razón Social'];
 
   const handleFileSelect = async (e) => {
     const selectedFile = e.target.files[0];
@@ -65,14 +64,12 @@ const LeadImportModal = ({ isOpen, onClose, onSuccess, buSchema }) => {
       const rows = XLSX.utils.sheet_to_json(worksheet);
 
       const leadsPayload = rows.map((row) => ({
-        fields: {
-          razonSocial: row.razonSocial || '',
-          rutEmpresa: row.rutEmpresa || '',
-          nombreContacto: row.nombreContacto || '',
-          correo: row.correo || '',
-          telefono: row.telefono || '',
-        },
-        executiveEmail: row.executiveEmail || null,
+        Nombre: row.Nombre || '',
+        Apellido: row.Apellido || '',
+        'Rut Empresa': row['Rut Empresa'] || '',
+        Telefono: row.Telefono || '',
+        Correo: row.Correo || '',
+        'Razón Social': row['Razón Social'] || '',
       }));
 
       const res = await LeadsService.bulkImport({ leads: leadsPayload });
@@ -145,8 +142,10 @@ const LeadImportModal = ({ isOpen, onClose, onSuccess, buSchema }) => {
                   {REQUIRED_COLUMNS.map((col) => (
                     <li key={col}>✓ {col} (obligatorio)</li>
                   ))}
-                  <li>✓ executiveEmail (opcional - asigna a ejecutivo)</li>
                 </ul>
+                <div className="mt-2 pt-2 border-t border-blue-500/30">
+                  <p className="text-blue-200 italic">💡 Los leads se distribuirán equitativamente entre tus ejecutivos</p>
+                </div>
               </div>
 
               {/* Preview */}
@@ -161,17 +160,17 @@ const LeadImportModal = ({ isOpen, onClose, onSuccess, buSchema }) => {
                           <th className="text-left py-1 px-2 text-slate-400">RUT</th>
                           <th className="text-left py-1 px-2 text-slate-400">Contacto</th>
                           <th className="text-left py-1 px-2 text-slate-400">Email</th>
-                          <th className="text-left py-1 px-2 text-slate-400">Ejecutivo</th>
+                          <th className="text-left py-1 px-2 text-slate-400">Asignación</th>
                         </tr>
                       </thead>
                       <tbody>
                         {preview.rows.map((row, i) => (
                           <tr key={i} className="border-b border-slate-800">
-                            <td className="py-1 px-2">{row.razonSocial}</td>
-                            <td className="py-1 px-2">{row.rutEmpresa}</td>
-                            <td className="py-1 px-2">{row.nombreContacto}</td>
-                            <td className="py-1 px-2 text-slate-500 text-xs">{row.correo}</td>
-                            <td className="py-1 px-2 text-slate-500 text-xs">{row.executiveEmail || '—'}</td>
+                            <td className="py-1 px-2">{row['Razón Social']}</td>
+                            <td className="py-1 px-2">{row['Rut Empresa']}</td>
+                            <td className="py-1 px-2">{row.Nombre} {row.Apellido}</td>
+                            <td className="py-1 px-2 text-slate-500 text-xs">{row.Correo}</td>
+                            <td className="py-1 px-2 text-slate-500 text-xs">Auto</td>
                           </tr>
                         ))}
                       </tbody>
