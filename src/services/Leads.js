@@ -6,6 +6,7 @@ class LeadsService {
   getStats = (params = {}) => instance.get('/api/leads/stats', { params });
   getUnassigned = () => instance.get('/api/leads/unassigned');
   getMyDaySummary = () => instance.get('/api/leads/my-day/summary');
+  getUpcomingFollowups = () => instance.get('/api/leads/my-day/followups');
   search = (params = {}) => instance.get('/api/leads/search', { params });
   create = (data) => instance.post('/api/leads', data);
   update = (id, data) => instance.put(`/api/leads/${id}`, data);

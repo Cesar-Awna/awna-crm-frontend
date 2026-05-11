@@ -31,14 +31,19 @@ const ACTIVITY_COLORS = {
 const MyDay = () => {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
+  const [followups, setFollowups] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const summaryRes = await LeadsService.getMyDaySummary();
+        const [summaryRes, followupsRes] = await Promise.all([
+          LeadsService.getMyDaySummary(),
+          LeadsService.getUpcomingFollowups(),
+        ]);
         if (summaryRes?.success) setData(summaryRes.data);
+        if (followupsRes?.success) setFollowups(followupsRes.data);
       } catch (e) {
         console.error('Error loading my day:', e);
       } finally {
@@ -104,6 +109,75 @@ const MyDay = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Próximo Seguimiento - Today */}
+            {followups?.today && followups.today.length > 0 && (
+              <Card className="mb-6 border-emerald-500/30 bg-emerald-500/5">
+                <CardHeader>
+                  <CardTitle className="text-emerald-400">📅 Próximo seguimiento para hoy</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {followups.today.map((lead) => (
+                      <div
+                        key={lead._id}
+                        onClick={() => navigate(`/leads/${lead._id}`)}
+                        className="flex cursor-pointer items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 hover:bg-emerald-500/20 transition"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-emerald-300">
+                            {lead.fields?.['Razón Social'] || lead.razonSocial || '—'}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            {lead.fields?.Nombre || lead.nombreContacto || '—'} {lead.fields?.Apellido || lead.apellido || ''}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-semibold text-emerald-300">{lead.nextActionType || '—'}</p>
+                          <p className="text-xs text-slate-500">Hoy</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Seguimientos Vencidos - Overdue */}
+            {followups?.overdue && followups.overdue.length > 0 && (
+              <Card className="mb-6 border-orange-500/30 bg-orange-500/5">
+                <CardHeader>
+                  <CardTitle className="text-orange-400">⚠️ Seguimientos vencidos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {followups.overdue.map((lead) => {
+                      const daysOverdue = Math.floor((Date.now() - new Date(lead.nextContactDate)) / (1000 * 60 * 60 * 24));
+                      return (
+                        <div
+                          key={lead._id}
+                          onClick={() => navigate(`/leads/${lead._id}`)}
+                          className="flex cursor-pointer items-center justify-between rounded-lg border border-orange-500/30 bg-orange-500/10 p-3 hover:bg-orange-500/20 transition"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-orange-300">
+                              {lead.fields?.['Razón Social'] || lead.razonSocial || '—'}
+                            </p>
+                            <p className="text-xs text-slate-400">
+                              {lead.fields?.Nombre || lead.nombreContacto || '—'} {lead.fields?.Apellido || lead.apellido || ''}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-semibold text-orange-300">{lead.nextActionType || '—'}</p>
+                            <p className="text-xs text-orange-400 font-semibold">{daysOverdue}d atrás</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Pipeline por estado */}
             <Card className="mb-6">
