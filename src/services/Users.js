@@ -12,6 +12,7 @@ class UsersService {
     instance.patch(`/api/users/${id}/assign-business-units`, payload);
   assignSupervisor = (id, payload) =>
     instance.patch(`/api/users/${id}/assign-supervisor`, payload);
+  createExecutive = (data) => instance.post('/api/users/create-executive', data);
   changePassword = (payload) => instance.patch('/api/users/me/change-password', payload);
 }
 
