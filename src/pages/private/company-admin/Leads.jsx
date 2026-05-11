@@ -384,8 +384,8 @@ const AdminLeads = () => {
                               <>
                                 <td className="max-w-40 truncate py-2 pr-4 text-xs">{getLeadField(lead, 'razonSocial')}</td>
                                 <td className="py-2 pr-4 font-mono text-xs">{getLeadField(lead, 'rutEmpresa')}</td>
-                                <td className="py-2 pr-4 text-xs">{getLeadField(lead, 'contactName')}</td>
-                                <td className="py-2 pr-4 text-xs">{getLeadField(lead, 'contactPhone')}</td>
+                                <td className="py-2 pr-4 text-xs">{getLeadField(lead, 'nombreContacto')}</td>
+                                <td className="py-2 pr-4 text-xs">{getLeadField(lead, 'telefono')}</td>
                               </>
                             )}
                           <td className="py-2 pr-4 text-xs">{getBUName(lead.businessUnitId)}</td>
