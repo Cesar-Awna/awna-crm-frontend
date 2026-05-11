@@ -7,12 +7,8 @@ export const NEXT_ACTION_TYPES = [
 
 export const ACTIVITY_TYPES = [
   { value: 'CALL',            label: 'Llamada realizada' },
-  { value: 'CONTACT_SUCCESS', label: 'Contacto efectivo' },
-  { value: 'FOLLOWUP',        label: 'Seguimiento realizado' },
-  { value: 'WHATSAPP_SENT',   label: 'WhatsApp enviado' },
   { value: 'EMAIL_SENT',      label: 'Correo enviado' },
-  { value: 'QUOTE_SENT',      label: 'Cotización enviada' },
-  { value: 'RESCHEDULE',      label: 'Reagendamiento' },
+  { value: 'MEETING',         label: 'Reunión' },
   { value: 'NOTE_ADDED',      label: 'Nota' },
 ];
 
