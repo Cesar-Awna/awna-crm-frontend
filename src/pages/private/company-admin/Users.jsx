@@ -162,6 +162,23 @@ const Users = () => {
     }
   };
 
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('¿Confirmas eliminar este usuario?')) return;
+    setError(null);
+    try {
+      const res = await UsersService.delete(userId);
+      if (res?.success) {
+        setSuccessMsg('Usuario eliminado correctamente.');
+        setTimeout(() => setSuccessMsg(null), 4000);
+        loadUsers();
+      } else {
+        setError(res?.message || 'Error al eliminar usuario');
+      }
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || 'Error al eliminar usuario');
+    }
+  };
+
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (!pwdForm.newPwd || pwdForm.newPwd !== pwdForm.confirm) {
@@ -351,6 +368,15 @@ const Users = () => {
                               onClick={() => setPwdModal({ open: true, userId: u._id })}
                             >
                               Pwd
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="text-rose-400 border-rose-400 hover:bg-rose-500/10"
+                              onClick={() => handleDeleteUser(u._id)}
+                            >
+                              Eliminar
                             </Button>
                           </div>
                         </td>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Sidebar from '../../../components/Sidebar.jsx';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx';
+import { Button } from '../../../components/ui/button.jsx';
 import MetricsService from '../../../services/Metrics.js';
 import UsersService from '../../../services/Users.js';
 import LeadsService from '../../../services/Leads.js';
@@ -38,6 +39,8 @@ const SupervisorMetrics = () => {
   const [executives, setExecutives]         = useState([]);
   const [metricsData, setMetricsData]       = useState({});
   const [counters, setCounters]             = useState(null);
+  const [error, setError]                   = useState(null);
+  const [success, setSuccess]               = useState(null);
 
   useEffect(() => {
     const loadMetrics = async () => {
@@ -132,6 +135,27 @@ const SupervisorMetrics = () => {
     }
   };
 
+  const handleDeleteExecutive = async (userId) => {
+    if (!window.confirm('¿Confirmas eliminar este ejecutivo?')) return;
+    setError(null);
+    try {
+      const res = await UsersService.delete(userId);
+      if (res?.success) {
+        setSuccess('Ejecutivo eliminado correctamente.');
+        setTimeout(() => setSuccess(null), 4000);
+        const usersRes = await UsersService.getExecutives();
+        if (usersRes?.success && Array.isArray(usersRes.data)) {
+          setExecutives(usersRes.data);
+          await handleRefreshMetrics();
+        }
+      } else {
+        setError(res?.message || 'Error al eliminar ejecutivo');
+      }
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || 'Error al eliminar ejecutivo');
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-50">
       <Sidebar />
@@ -142,6 +166,16 @@ const SupervisorMetrics = () => {
             Indicadores de conversión y desempeño de tu equipo.
           </p>
         </header>
+        {error && (
+          <div className="mb-4 rounded-md bg-rose-500/15 px-4 py-3 text-sm text-rose-200 border border-rose-500/30">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 rounded-md bg-emerald-500/15 px-4 py-3 text-sm text-emerald-200 border border-emerald-500/30">
+            {success}
+          </div>
+        )}
 
         {loading ? (
           <p className="text-sm text-slate-400">Cargando métricas…</p>
@@ -376,15 +410,18 @@ const SupervisorMetrics = () => {
                       <thead>
                         <tr className="border-b border-slate-700 text-left text-slate-400">
                           <th className="pb-3 pr-4">Ejecutivo</th>
+                          <th className="pb-3 pr-4 text-center">Total leads</th>
                           <th className="pb-3 pr-4 text-center">En gestión</th>
                           <th className="pb-3 pr-4 text-center">Ganados</th>
                           <th className="pb-3 pr-4 text-center">Perdidos</th>
                           <th className="pb-3 pr-4 text-center">No válidos</th>
-                          <th className="pb-3 text-center">Conversión</th>
+                          <th className="pb-3 pr-4 text-center">Conversión</th>
+                          <th className="pb-3 text-right">Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
                         {executives.map((exec) => {
+                          const totalCount = getMetric(exec._id, 'total', 0);
                           const openCount = getMetric(exec._id, 'openCount', 0);
                           const wonCount = getMetric(exec._id, 'wonCount', 0);
                           const lostCount = getMetric(exec._id, 'lostCount', 0);
@@ -399,6 +436,11 @@ const SupervisorMetrics = () => {
                               <td className="py-3 pr-4 font-medium">
                                 {exec.fullName}
                                 <p className="text-xs text-slate-500 mt-0.5">{exec.email}</p>
+                              </td>
+                              <td className="py-3 pr-4 text-center">
+                                <span className="inline-block rounded bg-slate-700/40 px-2 py-1 text-slate-200 font-semibold">
+                                  {totalCount}
+                                </span>
                               </td>
                               <td className="py-3 pr-4 text-center">
                                 <span className="inline-block rounded bg-sky-500/20 px-2 py-1 text-sky-300 font-semibold">
@@ -424,6 +466,16 @@ const SupervisorMetrics = () => {
                                 <span className="inline-block rounded bg-violet-500/20 px-2 py-1 text-violet-300 font-semibold">
                                   {conversionRate}%
                                 </span>
+                              </td>
+                            <td className="py-3 text-right">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-rose-400 border-rose-400 hover:bg-rose-500/10"
+                                  onClick={() => handleDeleteExecutive(exec._id)}
+                                >
+                                  Eliminar
+                                </Button>
                               </td>
                             </tr>
                           );

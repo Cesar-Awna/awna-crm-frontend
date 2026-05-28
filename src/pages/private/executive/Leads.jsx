@@ -42,6 +42,8 @@ const Leads = () => {
   const [search, setSearch] = useState('');
   const [buSchema, setBuSchema] = useState([]);
   const [pipelineStages, setPipelineStages] = useState([]);
+  const [leadStats, setLeadStats] = useState({ openCount: 0, wonCount: 0, lostCount: 0, invalidCount: 0 });
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     const loadSchema = async () => {
@@ -64,13 +66,36 @@ const Leads = () => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
+      setLoadError('');
       try {
-        const res = await LeadsService.getAll({
+        const listParams = {
           status: filterStatus || undefined,
-        });
-        if (res?.success) setLeads(res.data || []);
+          limit: 100,
+          page: 1,
+        };
+        const [leadsRes, statsRes] = await Promise.all([
+          LeadsService.getAll(listParams),
+          LeadsService.getStats({ status: filterStatus || undefined }),
+        ]);
+
+        if (leadsRes?.success) {
+          setLeads(Array.isArray(leadsRes.data) ? leadsRes.data : []);
+        } else {
+          setLeads([]);
+          setLoadError(leadsRes?.message || 'No se pudieron cargar los leads.');
+        }
+        if (statsRes?.success) {
+          setLeadStats({
+            openCount: statsRes.data.openCount || 0,
+            wonCount: statsRes.data.wonCount || 0,
+            lostCount: statsRes.data.lostCount || 0,
+            invalidCount: statsRes.data.invalidCount || 0,
+          });
+        }
       } catch (e) {
         console.error('Error loading leads:', e);
+        setLeads([]);
+        setLoadError(e?.response?.data?.message || e?.message || 'Error al cargar leads.');
       } finally {
         setLoading(false);
       }
@@ -121,6 +146,9 @@ const Leads = () => {
 
   const getLeadsByStatus = (status) => filteredLeads.filter((l) => l.status === status);
 
+  const stageKeySet = new Set(stages.map((s) => s.value));
+  const unmatchedLeads = filteredLeads.filter((l) => !stageKeySet.has(l.status));
+
   const stageTypes = (() => {
     if (pipelineStages.length > 0 && pipelineStages.some((s) => s.stageType && s.stageType !== 'open')) {
       return {
@@ -132,9 +160,10 @@ const Leads = () => {
     return { won: ['CERRADO_GANADO'], lost: ['CERRADO_PERDIDO'], invalid: ['DATO_ERRADO'] };
   })();
   const closedKeys = [...stageTypes.won, ...stageTypes.lost, ...stageTypes.invalid];
-  const totalOpen  = filteredLeads.filter((l) => !closedKeys.includes(l.status)).length;
-  const wonCount   = filteredLeads.filter((l) => stageTypes.won.includes(l.status)).length;
-  const lostCount  = filteredLeads.filter((l) => stageTypes.lost.includes(l.status)).length;
+  const totalOpen  = leadStats.openCount ?? filteredLeads.filter((l) => !closedKeys.includes(l.status)).length;
+  const wonCount   = leadStats.wonCount ?? filteredLeads.filter((l) => stageTypes.won.includes(l.status)).length;
+  const lostCount  = leadStats.lostCount ?? filteredLeads.filter((l) => stageTypes.lost.includes(l.status)).length;
+  const invalidCount = leadStats.invalidCount ?? filteredLeads.filter((l) => stageTypes.invalid.includes(l.status)).length;
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-50">
@@ -226,6 +255,12 @@ const Leads = () => {
             className="min-w-[280px] flex-1 rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
           />
         </div>
+
+        {loadError ? (
+          <p className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+            {loadError}
+          </p>
+        ) : null}
 
         {loading ? (
           <p className="text-sm text-slate-400">Cargando leads…</p>
@@ -325,6 +360,38 @@ const Leads = () => {
                 </div>
               );
             })}
+            {unmatchedLeads.length > 0 ? (
+              <div className="flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-amber-500/40 bg-[var(--panel-bg)]">
+                <div className="flex items-center gap-2.5 border-b border-[var(--border-color)] bg-[var(--input-bg)] px-3 py-2.5">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full bg-amber-500 ring-1 ring-[var(--border-color)]"
+                    aria-hidden
+                  />
+                  <div className="min-w-0 flex-1 text-sm font-medium text-[var(--input-fg)]">
+                    Otros estados{' '}
+                    <span className="font-normal text-[var(--muted-fg)]">({unmatchedLeads.length})</span>
+                  </div>
+                </div>
+                <div className="min-h-[200px] space-y-2 p-2">
+                  {unmatchedLeads.map((lead) => (
+                    <div
+                      key={lead._id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => navigate(`/leads/${lead._id}`)}
+                      className="cursor-pointer rounded-lg border border-amber-500/30 bg-[var(--input-bg)]/60 p-3"
+                    >
+                      <p className="truncate text-sm font-medium text-[var(--input-fg)]">
+                        {lead.razonSocial || `Lead #${lead._id.slice(-6)}`}
+                      </p>
+                      <p className="mt-1 text-xs text-amber-300/90">
+                        Estado: {getStatusLabel(lead.status) || lead.status || '—'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : (
           <Card>
