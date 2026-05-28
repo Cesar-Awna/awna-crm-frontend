@@ -23,7 +23,9 @@ export const LEAD_STATUSES = [
   { value: 'COTIZACION_ENVIADA', label: 'Cotización enviada' },
   { value: 'EN_SEGUIMIENTO',     label: 'En seguimiento' },
   { value: 'CERRADO_GANADO',     label: 'Cerrado ganado' },
+  { value: 'CLIENTE',            label: 'Cliente' },
   { value: 'CERRADO_PERDIDO',    label: 'Cerrado perdido' },
+  { value: 'NO_INTERESADO',      label: 'No interesado' },
 ];
 
 export const LEAD_STATUS_VALUES = LEAD_STATUSES.map((s) => s.value);
@@ -43,6 +45,7 @@ export function mapApiLeadToFormState(lead, schema = []) {
     status:              lead.status             || 'NUEVO',
     nextContactDate:     lead.nextContactDate ? lead.nextContactDate.slice(0, 10) : '',
     nextActionType:      lead.nextActionType      || '',
+    closedAt:            lead.closedAt ? lead.closedAt.slice(0, 10) : '',
     activityCounts:      lead.activityCounts      || {},
     callCount:           lead.callCount           ?? 0,
     contactSuccessCount: lead.contactSuccessCount ?? 0,
@@ -107,6 +110,7 @@ export function buildLeadPayload(f, options = {}) {
   if (f.nextActionType) payload.nextActionType = f.nextActionType;
 
   if (isEdit) {
+    if (f.closedAt) payload.closedAt = f.closedAt;
     if (f.activityCounts && Object.keys(f.activityCounts).length > 0) {
       payload.activityCounts = f.activityCounts;
     }

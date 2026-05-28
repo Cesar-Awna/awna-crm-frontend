@@ -10,6 +10,7 @@ import {
   LEAD_STATUSES,
   getStatusLabel,
 } from '../../../lib/leadFormMappers.js';
+import { exportCSV } from '../../../utils/exportCSV.js';
 
 const STATUS_COLORS = {
   NUEVO: '#38bdf8',
@@ -19,7 +20,9 @@ const STATUS_COLORS = {
   COTIZACION_ENVIADA: '#fbbf24',
   EN_SEGUIMIENTO: '#f97316',
   CERRADO_GANADO: '#10b981',
+  CLIENTE: '#059669',
   CERRADO_PERDIDO: '#ef4444',
+  NO_INTERESADO: '#fb7185',
 };
 
 const formatDate = (dateStr) => {
@@ -39,6 +42,8 @@ const Leads = () => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('kanban');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterFuente, setFilterFuente] = useState('');
+  const [filterProducto, setFilterProducto] = useState('');
   const [search, setSearch] = useState('');
   const [buSchema, setBuSchema] = useState([]);
   const [pipelineStages, setPipelineStages] = useState([]);
@@ -117,6 +122,8 @@ const Leads = () => {
   };
 
   const filteredLeads = leads.filter((l) => {
+    if (filterFuente && (l.fields?.fuenteLead ?? '') !== filterFuente) return false;
+    if (filterProducto && (l.fields?.productoCotizado ?? '') !== filterProducto) return false;
     if (!search) return true;
     const q = search.toLowerCase();
     if ((l.razonSocial || '').toLowerCase().includes(q)) return true;
@@ -145,6 +152,23 @@ const Leads = () => {
   const cardFields = inlineFields.length > 0 ? inlineFields.slice(0, 3) : null;
 
   const getLeadsByStatus = (status) => filteredLeads.filter((l) => l.status === status);
+
+  const handleExportCSV = () => {
+    const cols = inlineFields.length > 0 ? inlineFields : [
+      { key: 'razonSocial', label: 'Razón Social' },
+      { key: 'rutEmpresa', label: 'RUT' },
+      { key: 'contactName', label: 'Contacto' },
+      { key: 'contactPhone', label: 'Teléfono' },
+    ];
+    const csvData = filteredLeads.map((lead) => {
+      const row = {};
+      cols.forEach((col) => { row[col.label] = getLeadField(lead, col.key); });
+      row['Estado'] = getStatusLabel(lead.status) || lead.status || '—';
+      row['Ingreso'] = formatDate(lead.createdAt);
+      return row;
+    });
+    exportCSV(csvData, `leads-${new Date().toISOString().split('T')[0]}.csv`);
+  };
 
   const stageKeySet = new Set(stages.map((s) => s.value));
   const unmatchedLeads = filteredLeads.filter((l) => !stageKeySet.has(l.status));
@@ -233,19 +257,52 @@ const Leads = () => {
           </div>
 
           {viewMode === 'list' && (
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
-            >
-              <option value="">Todos los estados</option>
-              {stages.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
+            <>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
+              >
+                <option value="">Todos los estados</option>
+                {stages.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportCSV}
+                disabled={filteredLeads.length === 0}
+              >
+                📥 Exportar CSV
+              </Button>
+            </>
           )}
+
+          <select
+            value={filterFuente}
+            onChange={(e) => setFilterFuente(e.target.value)}
+            className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
+          >
+            <option value="">Todas las fuentes</option>
+            {['Ads', 'Apolo', 'Referido', 'Otro'].map((o) => (
+              <option key={o} value={o}>{o}</option>
+            ))}
+          </select>
+
+          <select
+            value={filterProducto}
+            onChange={(e) => setFilterProducto(e.target.value)}
+            className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
+          >
+            <option value="">Todos los productos</option>
+            {['Mora Control', 'Reporte Interactivo'].map((o) => (
+              <option key={o} value={o}>{o}</option>
+            ))}
+          </select>
 
           <input
             type="search"

@@ -18,7 +18,9 @@ const STATUS_COLORS = {
   COTIZACION_ENVIADA: '#fbbf24',
   EN_SEGUIMIENTO: '#f97316',
   CERRADO_GANADO: '#10b981',
+  CLIENTE: '#059669',
   CERRADO_PERDIDO: '#ef4444',
+  NO_INTERESADO: '#fb7185',
 };
 
 const Reports = () => {
@@ -35,6 +37,8 @@ const Reports = () => {
     status: '',
     nextContactDateFrom: '',
     nextContactDateTo: '',
+    fuenteLead: '',
+    productoCotizado: '',
   });
 
   const [conversionData, setConversionData] = useState(null);
@@ -74,6 +78,8 @@ const Reports = () => {
       if (leadsFilters.status) params.status = leadsFilters.status;
       if (leadsFilters.nextContactDateFrom) params.nextContactDateFrom = leadsFilters.nextContactDateFrom;
       if (leadsFilters.nextContactDateTo) params.nextContactDateTo = leadsFilters.nextContactDateTo;
+      if (leadsFilters.fuenteLead) params.fuenteLead = leadsFilters.fuenteLead;
+      if (leadsFilters.productoCotizado) params.productoCotizado = leadsFilters.productoCotizado;
 
       const res = await LeadsService.getAll(params);
       if (res?.success && Array.isArray(res.data)) {
@@ -149,12 +155,18 @@ const Reports = () => {
   };
 
   const handleExportLeads = () => {
+    const f = (lead, key) => lead?.fields?.[key] ?? lead?.[key] ?? '—';
     const csvData = leadsData.map((lead) => ({
-      'Razón Social': lead.razonSocial || '—',
-      'RUT': lead.rutEmpresa || '—',
-      'Contacto': lead.contactName || '—',
-      'Email': lead.contactEmail || '—',
-      'Teléfono': lead.contactPhone || '—',
+      'Razón Social': f(lead, 'razonSocial'),
+      'RUT': f(lead, 'rutEmpresa'),
+      'Contacto': f(lead, 'contactName'),
+      'Email': f(lead, 'contactEmail'),
+      'Teléfono': f(lead, 'contactPhone'),
+      'Producto cotizado': lead.fields?.productoCotizado || '—',
+      'Valor esperado': lead.fields?.valorEsperado || '—',
+      'Moneda': lead.fields?.monedaValorEsperado || '—',
+      'Segmentación': lead.fields?.segmentacion || '—',
+      'Fuente de lead': lead.fields?.fuenteLead || '—',
       'Estado': lead.status || '—',
       'BU': businessUnits.find((b) => b._id === lead.businessUnitId)?.name || '—',
       'Ejecutivo': executives.find((e) => e._id === lead.ownerUserId)?.fullName || '—',
@@ -252,10 +264,32 @@ const Reports = () => {
                     className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                   >
                     <option value="">Todos los estados</option>
-                    {['NUEVO', 'CONTACTADO', 'INTERESADO', 'COTIZACION_ENVIADA', 'EN_SEGUIMIENTO', 'CERRADO_GANADO', 'CERRADO_PERDIDO', 'DATO_ERRADO'].map((s) => (
+                    {['NUEVO', 'CONTACTADO', 'INTERESADO', 'COTIZACION_ENVIADA', 'EN_SEGUIMIENTO', 'CERRADO_GANADO', 'CLIENTE', 'CERRADO_PERDIDO', 'NO_INTERESADO', 'DATO_ERRADO'].map((s) => (
                       <option key={s} value={s}>
                         {s.replace(/_/g, ' ')}
                       </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={leadsFilters.fuenteLead}
+                    onChange={(e) => setLeadsFilters({ ...leadsFilters, fuenteLead: e.target.value })}
+                    className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                  >
+                    <option value="">Todas las fuentes</option>
+                    {['Ads', 'Apolo', 'Referido', 'Otro'].map((o) => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={leadsFilters.productoCotizado}
+                    onChange={(e) => setLeadsFilters({ ...leadsFilters, productoCotizado: e.target.value })}
+                    className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                  >
+                    <option value="">Todos los productos</option>
+                    {['Mora Control', 'Reporte Interactivo'].map((o) => (
+                      <option key={o} value={o}>{o}</option>
                     ))}
                   </select>
 
@@ -276,7 +310,7 @@ const Reports = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setLeadsFilters({ businessUnitId: '', ownerUserId: '', status: '', nextContactDateFrom: '', nextContactDateTo: '' })}
+                    onClick={() => setLeadsFilters({ businessUnitId: '', ownerUserId: '', status: '', nextContactDateFrom: '', nextContactDateTo: '', fuenteLead: '', productoCotizado: '' })}
                   >
                     Limpiar
                   </Button>

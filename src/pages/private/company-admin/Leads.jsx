@@ -7,6 +7,7 @@ import LeadsService from '../../../services/Leads.js';
 import UsersService from '../../../services/Users.js';
 import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import { LEAD_STATUSES, getStatusLabel } from '../../../lib/leadFormMappers.js';
+import { exportCSV } from '../../../utils/exportCSV.js';
 import { usePagination } from '../../../hooks/usePagination.js';
 import PaginationControls from '../../../components/PaginationControls.jsx';
 import LeadImportModal from '../../../components/LeadImportModal.jsx';
@@ -21,7 +22,9 @@ const STATUS_BADGE = {
   COTIZACION_ENVIADA: 'bg-amber-500/20 text-amber-300',
   EN_SEGUIMIENTO: 'bg-orange-500/20 text-orange-300',
   CERRADO_GANADO: 'bg-emerald-500/20 text-emerald-300',
+  CLIENTE: 'bg-green-600/20 text-green-300',
   CERRADO_PERDIDO: 'bg-rose-500/20 text-rose-300',
+  NO_INTERESADO: 'bg-pink-500/20 text-pink-300',
 };
 
 const AdminLeads = () => {
@@ -35,6 +38,8 @@ const AdminLeads = () => {
     businessUnitId: '',
     ownerUserId: '',
     status: '',
+    fuenteLead: '',
+    productoCotizado: '',
   });
   const [reassignModal, setReassignModal] = useState({ open: false, leadId: null });
   const [reassignUserId, setReassignUserId] = useState('');
@@ -88,6 +93,8 @@ const AdminLeads = () => {
         if (leadFilters.businessUnitId) params.businessUnitId = leadFilters.businessUnitId;
         if (leadFilters.ownerUserId) params.ownerUserId = leadFilters.ownerUserId;
         if (leadFilters.status) params.status = leadFilters.status;
+        if (leadFilters.fuenteLead) params.fuenteLead = leadFilters.fuenteLead;
+        if (leadFilters.productoCotizado) params.productoCotizado = leadFilters.productoCotizado;
 
         const statsParams = {};
         if (leadFilters.businessUnitId) statsParams.businessUnitId = leadFilters.businessUnitId;
@@ -106,21 +113,13 @@ const AdminLeads = () => {
 
         if (statsRes?.success && statsRes.data) {
           const stats = statsRes.data;
-          const byStatus = stats.byStatus || {};
-          const openCount = Object.entries(byStatus)
-            .filter(([status]) => !['CERRADO_GANADO', 'CERRADO_PERDIDO', 'DATO_ERRADO'].includes(status))
-            .reduce((sum, [, count]) => sum + count, 0);
-          const wonCount = byStatus.CERRADO_GANADO || 0;
-          const lostCount = byStatus.CERRADO_PERDIDO || 0;
-          const invalidCount = byStatus.DATO_ERRADO || 0;
-
           setLeadStats({
             total: stats.total || 0,
-            openCount,
-            wonCount,
-            lostCount,
-            invalidCount,
-            byStatus,
+            openCount: stats.openCount || 0,
+            wonCount: stats.wonCount || 0,
+            lostCount: stats.lostCount || 0,
+            invalidCount: stats.invalidCount || 0,
+            byStatus: stats.byStatus || {},
           });
         }
       } catch (e) {
@@ -188,6 +187,25 @@ const AdminLeads = () => {
 
   const executives = users;
   const dynCols = activeBuSchema.filter((f) => f.type !== 'textarea').slice(0, 4);
+
+  const handleExportCSV = () => {
+    const cols = dynCols.length > 0 ? dynCols : [
+      { key: 'razonSocial', label: 'Razón Social' },
+      { key: 'rutEmpresa',  label: 'RUT' },
+      { key: 'contactName', label: 'Contacto' },
+      { key: 'contactPhone', label: 'Teléfono' },
+    ];
+    const csvData = leads.map((lead) => {
+      const row = {};
+      cols.forEach((col) => { row[col.label] = getLeadField(lead, col.key); });
+      row['Unidad']    = getBUName(lead.businessUnitId);
+      row['Ejecutivo'] = getUserName(lead.ownerUserId);
+      row['Estado']    = getStatusLabel(lead.status) || lead.status || '—';
+      row['Ingreso']   = formatDate(lead.createdAt);
+      return row;
+    });
+    exportCSV(csvData, `leads-${new Date().toISOString().split('T')[0]}.csv`);
+  };
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-50">
@@ -313,12 +331,34 @@ const AdminLeads = () => {
                 ))}
               </select>
 
+              <select
+                className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                value={leadFilters.fuenteLead}
+                onChange={(e) => setLeadFilters((f) => ({ ...f, fuenteLead: e.target.value }))}
+              >
+                <option value="">Todas las fuentes</option>
+                {['Ads', 'Apolo', 'Referido', 'Otro'].map((o) => (
+                  <option key={o} value={o}>{o}</option>
+                ))}
+              </select>
+
+              <select
+                className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                value={leadFilters.productoCotizado}
+                onChange={(e) => setLeadFilters((f) => ({ ...f, productoCotizado: e.target.value }))}
+              >
+                <option value="">Todos los productos</option>
+                {['Mora Control', 'Reporte Interactivo'].map((o) => (
+                  <option key={o} value={o}>{o}</option>
+                ))}
+              </select>
+
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  setLeadFilters({ businessUnitId: '', ownerUserId: '', status: '' })
+                  setLeadFilters({ businessUnitId: '', ownerUserId: '', status: '', fuenteLead: '', productoCotizado: '' })
                 }
               >
                 Limpiar filtros
@@ -329,10 +369,21 @@ const AdminLeads = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>
-              Listado de leads{' '}
-              <span className="text-sm font-normal text-slate-400">({leads.length})</span>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>
+                Listado de leads{' '}
+                <span className="text-sm font-normal text-slate-400">({leads.length})</span>
+              </CardTitle>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleExportCSV}
+                disabled={leads.length === 0}
+              >
+                📥 Exportar CSV
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {message && typeof message === 'string' && (

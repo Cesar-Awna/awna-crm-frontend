@@ -17,6 +17,9 @@ class LeadsService {
   addNote = (id, note) => instance.post(`/api/leads/${id}/add-note`, { note });
   registerContact = (id, data) => instance.post(`/api/leads/${id}/register-contact`, data);
   logActivity = (id, data) => instance.post(`/api/leads/${id}/log-activity`, data);
+  logActivityWithFile = (id, formData) => instance.post(`/api/leads/${id}/log-activity-with-file`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   getEvents = (id) => instance.get(`/api/leads/${id}/events`);
 }
 

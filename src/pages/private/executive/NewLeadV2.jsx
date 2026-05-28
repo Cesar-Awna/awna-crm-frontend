@@ -90,6 +90,7 @@ const NewLeadV2 = () => {
   const [eventsLoading, setEventsLoading] = useState(false);
   const [activityType, setActivityType] = useState('CALL');
   const [activityNote, setActivityNote] = useState('');
+  const [activityFile, setActivityFile] = useState(null);
   const [activityLoading, setActivityLoading] = useState(false);
   const [hitoText, setHitoText] = useState('');
   const [hitoLoading, setHitoLoading] = useState(false);
@@ -245,12 +246,22 @@ const NewLeadV2 = () => {
     setError('');
     setSuccess('');
     try {
-      const res = await LeadsService.logActivity(leadId, {
-        eventType: activityType,
-        note: activityNote.trim() || undefined,
-      });
+      let res;
+      if (activityFile) {
+        const fd = new FormData();
+        fd.append('eventType', activityType);
+        if (activityNote.trim()) fd.append('note', activityNote.trim());
+        fd.append('file', activityFile);
+        res = await LeadsService.logActivityWithFile(leadId, fd);
+      } else {
+        res = await LeadsService.logActivity(leadId, {
+          eventType: activityType,
+          note: activityNote.trim() || undefined,
+        });
+      }
       if (res?.success) {
         setActivityNote('');
+        setActivityFile(null);
         await refreshEvents();
       } else {
         setError(res?.message || 'Error al registrar actividad.');
@@ -422,6 +433,16 @@ const NewLeadV2 = () => {
                         ))}
                       </select>
                     </div>
+                    <div>
+                      <label className="mb-1 block text-sm text-[var(--muted-fg)]">Fecha de cierre</label>
+                      <Input
+                        type="date"
+                        value={f.closedAt || ''}
+                        onChange={(e) => setField('closedAt', e.target.value)}
+                        placeholder="Se registra automáticamente al cerrar"
+                      />
+                      <p className="mt-1 text-xs text-[var(--muted-fg)]">Se establece automáticamente al cambiar a estado ganado o perdido.</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -528,7 +549,7 @@ const NewLeadV2 = () => {
                     <select
                       className="h-10 flex-1 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 text-sm text-[var(--input-fg)]"
                       value={activityType}
-                      onChange={(e) => setActivityType(e.target.value)}
+                      onChange={(e) => { setActivityType(e.target.value); setActivityFile(null); }}
                     >
                       {(buActivityTypes.length > 0
                         ? buActivityTypes.filter((a) => a.key !== 'NOTE_ADDED').map((a) => ({ value: a.key, label: a.label }))
@@ -547,6 +568,20 @@ const NewLeadV2 = () => {
                       {activityLoading ? 'Registrando…' : 'Registrar'}
                     </Button>
                   </div>
+                  {activityType === 'QUOTE_SENT' && (
+                    <div className="rounded-md border border-dashed border-[var(--input-border)] bg-[var(--input-bg)] p-3">
+                      <label className="mb-1 block text-xs text-[var(--muted-fg)]">Adjuntar cotización (PDF)</label>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        className="block w-full text-xs text-slate-300 file:mr-3 file:rounded file:border-0 file:bg-emerald-600/20 file:px-3 file:py-1 file:text-xs file:text-emerald-300 hover:file:bg-emerald-600/30"
+                        onChange={(e) => setActivityFile(e.target.files?.[0] || null)}
+                      />
+                      {activityFile && (
+                        <p className="mt-1 text-xs text-emerald-400">📎 {activityFile.name}</p>
+                      )}
+                    </div>
+                  )}
                   <div>
                     <p className="mb-2 text-xs font-medium uppercase text-[var(--muted-fg)]">Historial</p>
                     {eventsLoading ? (
@@ -562,6 +597,16 @@ const NewLeadV2 = () => {
                               <p className="text-sm font-medium">{getActivityLabel(ev.eventType)}</p>
                               {ev.metadata?.note && (
                                 <p className="mt-0.5 text-xs text-[var(--muted-fg)]">{ev.metadata.note}</p>
+                              )}
+                              {ev.metadata?.signedUrl && (
+                                <a
+                                  href={ev.metadata.signedUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300"
+                                >
+                                  📎 {ev.metadata.attachmentName || 'Ver adjunto'}
+                                </a>
                               )}
                               <p className="mt-1 text-xs text-[var(--muted-fg)]">
                                 {new Date(ev.eventAt).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })}
