@@ -393,7 +393,7 @@ const NewLeadV2 = () => {
               {isEdit ? 'Editar lead' : 'Nuevo lead'}
             </h1>
           </div>
-          {isEdit && (me?.role === 'SUPERVISOR' || me?.role === 'COMPANY_ADMIN') && (
+          {isEdit && (
             <div className="pt-6">
               {!deleteConfirm ? (
                 <Button
