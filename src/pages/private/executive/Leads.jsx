@@ -155,10 +155,11 @@ const Leads = () => {
 
   const handleExportCSV = () => {
     const cols = inlineFields.length > 0 ? inlineFields : [
-      { key: 'razonSocial', label: 'Razón Social' },
-      { key: 'rutEmpresa', label: 'RUT' },
-      { key: 'contactName', label: 'Contacto' },
-      { key: 'contactPhone', label: 'Teléfono' },
+      { key: 'razonSocial',    label: 'Razón Social' },
+      { key: 'rutEmpresa',     label: 'RUT' },
+      { key: 'nombreContacto', label: 'Contacto' },
+      { key: 'telefono',       label: 'Teléfono' },
+      { key: 'correo',         label: 'Correo' },
     ];
     const csvData = filteredLeads.map((lead) => {
       const row = {};

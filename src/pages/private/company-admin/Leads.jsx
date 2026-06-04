@@ -70,17 +70,18 @@ const AdminLeads = () => {
   }, [leadFilters.businessUnitId, leadFilters.ownerUserId, leadFilters.status]);
 
   useEffect(() => {
-    if (!leadFilters.businessUnitId) {
+    const buId = leadFilters.businessUnitId || businessUnits[0]?._id;
+    if (!buId) {
       setActiveBuSchema([]);
       return;
     }
-    BusinessUnitsService.getSchema(leadFilters.businessUnitId)
+    BusinessUnitsService.getSchema(buId)
       .then((res) => {
         if (res?.success && res.data) setActiveBuSchema(res.data.leadSchema || []);
         else setActiveBuSchema([]);
       })
       .catch(() => setActiveBuSchema([]));
-  }, [leadFilters.businessUnitId]);
+  }, [leadFilters.businessUnitId, businessUnits]);
 
   useEffect(() => {
     const loadLeadsData = async () => {
@@ -189,15 +190,18 @@ const AdminLeads = () => {
   const dynCols = activeBuSchema.filter((f) => f.type !== 'textarea').slice(0, 4);
 
   const handleExportCSV = () => {
-    const cols = dynCols.length > 0 ? dynCols : [
-      { key: 'razonSocial', label: 'Razón Social' },
-      { key: 'rutEmpresa',  label: 'RUT' },
-      { key: 'contactName', label: 'Contacto' },
-      { key: 'contactPhone', label: 'Teléfono' },
-    ];
+    const allCols = activeBuSchema.filter((f) => f.type !== 'textarea').length > 0
+      ? activeBuSchema.filter((f) => f.type !== 'textarea')
+      : [
+          { key: 'razonSocial',    label: 'Razón Social' },
+          { key: 'rutEmpresa',     label: 'RUT' },
+          { key: 'nombreContacto', label: 'Contacto' },
+          { key: 'telefono',       label: 'Teléfono' },
+          { key: 'correo',         label: 'Correo' },
+        ];
     const csvData = leads.map((lead) => {
       const row = {};
-      cols.forEach((col) => { row[col.label] = getLeadField(lead, col.key); });
+      allCols.forEach((col) => { row[col.label] = getLeadField(lead, col.key); });
       row['Unidad']    = getBUName(lead.businessUnitId);
       row['Ejecutivo'] = getUserName(lead.ownerUserId);
       row['Estado']    = getStatusLabel(lead.status) || lead.status || '—';
