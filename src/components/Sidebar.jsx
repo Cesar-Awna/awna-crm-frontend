@@ -5,6 +5,7 @@ import { Button } from './ui/button.jsx';
 import { getNavItemsForRole } from '../config/navByRole.js';
 import { getStoredRole } from '../lib/session.js';
 import NotificationsService from '../services/Notifications.js';
+import GlobalSearch from './GlobalSearch.jsx';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -104,6 +105,7 @@ const Sidebar = () => {
             {roleName ? roleName.replace(/_/g, ' ') : 'Panel'}
           </div>
         </div>
+        <GlobalSearch />
         <NavContent />
       </aside>
     </>
