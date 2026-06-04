@@ -94,6 +94,8 @@ const NewLeadV2 = () => {
   const [activityLoading, setActivityLoading] = useState(false);
   const [hitoText, setHitoText] = useState('');
   const [hitoLoading, setHitoLoading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [executives, setExecutives] = useState([]);
   const [assignToUserId, setAssignToUserId] = useState('');
 
@@ -175,6 +177,24 @@ const NewLeadV2 = () => {
   }, [leadId]);
 
   const setField = (k, v) => setF((p) => ({ ...p, [k]: v }));
+
+  const handleDeleteLead = async () => {
+    setDeleteLoading(true);
+    try {
+      const res = await LeadsService.deleteLead(leadId);
+      if (res?.success) {
+        navigate('/leads');
+      } else {
+        setError(res?.message || 'Error al eliminar el lead.');
+        setDeleteConfirm(false);
+      }
+    } catch (err) {
+      setError(err?.message || 'Error al eliminar el lead.');
+      setDeleteConfirm(false);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -364,13 +384,50 @@ const NewLeadV2 = () => {
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-6">
 
-        <div className="mb-4">
-          <Button type="button" variant="ghost" onClick={() => navigate('/leads')} className="mb-2 px-0 text-sm text-[var(--muted-fg)]">
-            ← Volver
-          </Button>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {isEdit ? 'Editar lead' : 'Nuevo lead'}
-          </h1>
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <Button type="button" variant="ghost" onClick={() => navigate('/leads')} className="mb-2 px-0 text-sm text-[var(--muted-fg)]">
+              ← Volver
+            </Button>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {isEdit ? 'Editar lead' : 'Nuevo lead'}
+            </h1>
+          </div>
+          {isEdit && (me?.role === 'SUPERVISOR' || me?.role === 'COMPANY_ADMIN') && (
+            <div className="pt-6">
+              {!deleteConfirm ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="text-rose-400 hover:text-rose-300 border-rose-500/30"
+                  onClick={() => setDeleteConfirm(true)}
+                >
+                  Eliminar lead
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2">
+                  <span className="text-sm text-rose-300">¿Confirmas eliminar?</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="bg-rose-600 hover:bg-rose-700 text-white"
+                    onClick={handleDeleteLead}
+                    disabled={deleteLoading}
+                  >
+                    {deleteLoading ? 'Eliminando…' : 'Sí, eliminar'}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setDeleteConfirm(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── CREAR: columna simple centrada ── */}

@@ -44,6 +44,8 @@ const AdminLeads = () => {
   const [reassignModal, setReassignModal] = useState({ open: false, leadId: null });
   const [reassignUserId, setReassignUserId] = useState('');
   const [reassigning, setReassigning] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ open: false, leadId: null });
+  const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState(null);
   const [activeBuSchema, setActiveBuSchema] = useState([]);
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -158,6 +160,25 @@ const AdminLeads = () => {
       setMessage(e?.response?.data?.message || e?.message || 'Error al reasignar');
     } finally {
       setReassigning(false);
+    }
+  };
+
+  const handleDeleteLead = async () => {
+    if (!deleteModal.leadId) return;
+    setDeleting(true);
+    try {
+      const res = await LeadsService.deleteLead(deleteModal.leadId);
+      if (res?.success) {
+        setMessage('Lead eliminado correctamente.');
+        setDeleteModal({ open: false, leadId: null });
+        setLeads((prev) => prev.filter((l) => l._id !== deleteModal.leadId));
+      } else {
+        setMessage(res?.message || 'Error al eliminar el lead.');
+      }
+    } catch (e) {
+      setMessage(e?.response?.data?.message || 'Error al eliminar el lead.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -478,6 +499,15 @@ const AdminLeads = () => {
                               >
                                 Reasignar
                               </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="text-rose-400 hover:text-rose-300 border-rose-500/30"
+                                onClick={() => setDeleteModal({ open: true, leadId: lead._id })}
+                              >
+                                Eliminar
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -542,6 +572,38 @@ const AdminLeads = () => {
                     disabled={reassigning || !reassignUserId}
                   >
                     {reassigning ? 'Reasignando…' : 'Confirmar reasignación'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {deleteModal.open && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+            <Card className="w-full max-w-sm">
+              <CardHeader>
+                <CardTitle className="text-rose-400">Eliminar lead</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-slate-400">
+                  ¿Estás seguro? Esta acción eliminará el lead y todo su historial de actividad. No se puede deshacer.
+                </p>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDeleteModal({ open: false, leadId: null })}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    className="bg-rose-600 hover:bg-rose-700 text-white"
+                    onClick={handleDeleteLead}
+                    disabled={deleting}
+                  >
+                    {deleting ? 'Eliminando…' : 'Sí, eliminar'}
                   </Button>
                 </div>
               </CardContent>

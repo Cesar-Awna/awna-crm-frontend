@@ -21,6 +21,7 @@ class LeadsService {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   getEvents = (id) => instance.get(`/api/leads/${id}/events`);
+  deleteLead = (id) => instance.delete(`/api/leads/${id}`);
 }
 
 const Leads = new LeadsService();
