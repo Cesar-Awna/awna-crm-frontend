@@ -48,6 +48,7 @@ const Reports = () => {
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityPeriod, setActivityPeriod] = useState('week');
   const [activityUserId, setActivityUserId] = useState('');
+  const [exportLeadsLoading, setExportLeadsLoading] = useState(false);
 
   React.useEffect(() => {
     const loadFilters = async () => {
@@ -154,25 +155,47 @@ const Reports = () => {
     return new Date(dateStr).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  const handleExportLeads = () => {
-    const f = (lead, key) => lead?.fields?.[key] ?? lead?.[key] ?? '—';
-    const csvData = leadsData.map((lead) => ({
-      'Razón Social': f(lead, 'razonSocial'),
-      'RUT': f(lead, 'rutEmpresa'),
-      'Contacto': f(lead, 'contactName'),
-      'Email': f(lead, 'contactEmail'),
-      'Teléfono': f(lead, 'contactPhone'),
-      'Producto cotizado': lead.fields?.productoCotizado || '—',
-      'Valor esperado': lead.fields?.valorEsperado || '—',
-      'Moneda': lead.fields?.monedaValorEsperado || '—',
-      'Segmentación': lead.fields?.segmentacion || '—',
-      'Fuente de lead': lead.fields?.fuenteLead || '—',
-      'Estado': lead.status || '—',
-      'BU': businessUnits.find((b) => b._id === lead.businessUnitId)?.name || '—',
-      'Ejecutivo': executives.find((e) => e._id === lead.ownerUserId)?.fullName || '—',
-      'Ingreso': formatDate(lead.createdAt),
-    }));
-    exportCSV(csvData, `reporte-leads-${new Date().toISOString().split('T')[0]}.csv`);
+  const handleExportLeads = async () => {
+    setExportLeadsLoading(true);
+    try {
+      let allLeads = [];
+      let page = 1;
+      while (true) {
+        const params = { page, limit: 100 };
+        if (leadsFilters.businessUnitId) params.businessUnitId = leadsFilters.businessUnitId;
+        if (leadsFilters.ownerUserId) params.ownerUserId = leadsFilters.ownerUserId;
+        if (leadsFilters.status) params.status = leadsFilters.status;
+        if (leadsFilters.nextContactDateFrom) params.nextContactDateFrom = leadsFilters.nextContactDateFrom;
+        if (leadsFilters.nextContactDateTo) params.nextContactDateTo = leadsFilters.nextContactDateTo;
+        if (leadsFilters.fuenteLead) params.fuenteLead = leadsFilters.fuenteLead;
+        if (leadsFilters.productoCotizado) params.productoCotizado = leadsFilters.productoCotizado;
+        const res = await LeadsService.getAll(params);
+        if (!res?.success || !Array.isArray(res.data) || res.data.length === 0) break;
+        allLeads = [...allLeads, ...res.data];
+        if (res.data.length < 100) break;
+        page++;
+      }
+      const f = (lead, key) => lead?.fields?.[key] ?? lead?.[key] ?? '—';
+      const csvData = allLeads.map((lead) => ({
+        'Razón Social': f(lead, 'razonSocial'),
+        'RUT': f(lead, 'rutEmpresa'),
+        'Contacto': f(lead, 'contactName'),
+        'Email': f(lead, 'contactEmail'),
+        'Teléfono': f(lead, 'contactPhone'),
+        'Producto cotizado': lead.fields?.productoCotizado || '—',
+        'Valor esperado': lead.fields?.valorEsperado || '—',
+        'Moneda': lead.fields?.monedaValorEsperado || '—',
+        'Segmentación': lead.fields?.segmentacion || '—',
+        'Fuente de lead': lead.fields?.fuenteLead || '—',
+        'Estado': lead.status || '—',
+        'BU': businessUnits.find((b) => b._id === lead.businessUnitId)?.name || '—',
+        'Ejecutivo': executives.find((e) => e._id === lead.ownerUserId)?.fullName || '—',
+        'Ingreso': formatDate(lead.createdAt),
+      }));
+      exportCSV(csvData, `reporte-leads-${new Date().toISOString().split('T')[0]}.csv`);
+    } finally {
+      setExportLeadsLoading(false);
+    }
   };
 
   const handleExportConversion = () => {
@@ -322,8 +345,8 @@ const Reports = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm">Listado de leads ({leadsData.length})</CardTitle>
-                  <Button size="sm" onClick={handleExportLeads} disabled={leadsLoading || !leadsData.length}>
-                    📥 Exportar CSV
+                  <Button size="sm" onClick={handleExportLeads} disabled={leadsLoading || !leadsData.length || exportLeadsLoading}>
+                    {exportLeadsLoading ? 'Exportando…' : '📥 Exportar CSV'}
                   </Button>
                 </div>
               </CardHeader>

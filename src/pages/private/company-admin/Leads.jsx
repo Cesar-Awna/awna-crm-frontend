@@ -49,6 +49,7 @@ const AdminLeads = () => {
   const [message, setMessage] = useState(null);
   const [activeBuSchema, setActiveBuSchema] = useState([]);
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const pagination = usePagination(1, 20);
 
   useEffect(() => {
@@ -210,26 +211,47 @@ const AdminLeads = () => {
   const executives = users;
   const dynCols = activeBuSchema.filter((f) => f.type !== 'textarea').slice(0, 4);
 
-  const handleExportCSV = () => {
-    const allCols = activeBuSchema.filter((f) => f.type !== 'textarea').length > 0
-      ? activeBuSchema.filter((f) => f.type !== 'textarea')
-      : [
-          { key: 'razonSocial',    label: 'Razón Social' },
-          { key: 'rutEmpresa',     label: 'RUT' },
-          { key: 'nombreContacto', label: 'Contacto' },
-          { key: 'telefono',       label: 'Teléfono' },
-          { key: 'correo',         label: 'Correo' },
-        ];
-    const csvData = leads.map((lead) => {
-      const row = {};
-      allCols.forEach((col) => { row[col.label] = getLeadField(lead, col.key); });
-      row['Unidad']    = getBUName(lead.businessUnitId);
-      row['Ejecutivo'] = getUserName(lead.ownerUserId);
-      row['Estado']    = getStatusLabel(lead.status) || lead.status || '—';
-      row['Ingreso']   = formatDate(lead.createdAt);
-      return row;
-    });
-    exportCSV(csvData, `leads-${new Date().toISOString().split('T')[0]}.csv`);
+  const handleExportCSV = async () => {
+    setExportLoading(true);
+    try {
+      let allLeads = [];
+      let page = 1;
+      while (true) {
+        const params = { page, limit: 100 };
+        if (leadFilters.businessUnitId) params.businessUnitId = leadFilters.businessUnitId;
+        if (leadFilters.ownerUserId)    params.ownerUserId    = leadFilters.ownerUserId;
+        if (leadFilters.status)         params.status         = leadFilters.status;
+        if (leadFilters.fuenteLead)     params.fuenteLead     = leadFilters.fuenteLead;
+        if (leadFilters.productoCotizado) params.productoCotizado = leadFilters.productoCotizado;
+        const res = await LeadsService.getAll(params);
+        if (!res?.success || !Array.isArray(res.data) || res.data.length === 0) break;
+        allLeads = [...allLeads, ...res.data];
+        if (res.data.length < 100) break;
+        page++;
+      }
+
+      const allCols = activeBuSchema.filter((f) => f.type !== 'textarea').length > 0
+        ? activeBuSchema.filter((f) => f.type !== 'textarea')
+        : [
+            { key: 'razonSocial',    label: 'Razón Social' },
+            { key: 'rutEmpresa',     label: 'RUT' },
+            { key: 'nombreContacto', label: 'Contacto' },
+            { key: 'telefono',       label: 'Teléfono' },
+            { key: 'correo',         label: 'Correo' },
+          ];
+      const csvData = allLeads.map((lead) => {
+        const row = {};
+        allCols.forEach((col) => { row[col.label] = getLeadField(lead, col.key); });
+        row['Unidad']    = getBUName(lead.businessUnitId);
+        row['Ejecutivo'] = getUserName(lead.ownerUserId);
+        row['Estado']    = getStatusLabel(lead.status) || lead.status || '—';
+        row['Ingreso']   = formatDate(lead.createdAt);
+        return row;
+      });
+      exportCSV(csvData, `leads-${new Date().toISOString().split('T')[0]}.csv`);
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   return (
@@ -404,9 +426,9 @@ const AdminLeads = () => {
                 size="sm"
                 variant="outline"
                 onClick={handleExportCSV}
-                disabled={leads.length === 0}
+                disabled={leads.length === 0 || exportLoading}
               >
-                📥 Exportar CSV
+                {exportLoading ? 'Exportando…' : '📥 Exportar CSV'}
               </Button>
             </div>
           </CardHeader>
