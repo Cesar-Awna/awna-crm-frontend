@@ -125,7 +125,11 @@ const NewLeadV2 = () => {
           if (!cancelled && exRes?.success) {
             const exList = exRes.data || [];
             setExecutives(exList);
-            if (exList.length > 0) setAssignToUserId(exList[0]._id);
+            if (meRes.data?.role === 'SUPERVISOR') {
+              setAssignToUserId(String(meRes.data.user._id));
+            } else if (exList.length > 0) {
+              setAssignToUserId(exList[0]._id);
+            }
           }
         }
       }
@@ -435,9 +439,9 @@ const NewLeadV2 = () => {
           <form onSubmit={onSubmit} className="mx-auto max-w-2xl space-y-4">
             {formFields}
 
-            {executives.length > 0 && (
+            {(me?.role === 'SUPERVISOR' || executives.length > 0) && (
               <Card>
-                <CardHeader><CardTitle>Asignar a ejecutivo *</CardTitle></CardHeader>
+                <CardHeader><CardTitle>Asignar a</CardTitle></CardHeader>
                 <CardContent>
                   <select
                     required
@@ -445,6 +449,9 @@ const NewLeadV2 = () => {
                     value={assignToUserId}
                     onChange={(e) => setAssignToUserId(e.target.value)}
                   >
+                    {me?.role === 'SUPERVISOR' && (
+                      <option value={String(me?.user?._id)}>Yo mismo</option>
+                    )}
                     {executives.map((u) => (
                       <option key={u._id} value={u._id}>{u.fullName}</option>
                     ))}
