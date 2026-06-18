@@ -242,10 +242,11 @@ const AdminLeads = () => {
       const csvData = allLeads.map((lead) => {
         const row = {};
         allCols.forEach((col) => { row[col.label] = getLeadField(lead, col.key); });
-        row['Unidad']    = getBUName(lead.businessUnitId);
-        row['Ejecutivo'] = getUserName(lead.ownerUserId);
-        row['Estado']    = getStatusLabel(lead.status) || lead.status || '—';
-        row['Ingreso']   = formatDate(lead.createdAt);
+        row['Unidad']          = getBUName(lead.businessUnitId);
+        row['Ejecutivo']       = getUserName(lead.ownerUserId);
+        row['Estado']          = getStatusLabel(lead.status) || lead.status || '—';
+        row['Ingreso']         = formatDate(lead.createdAt);
+        row['Fecha de cierre'] = lead.closedAt ? formatDate(lead.closedAt) : '—';
         return row;
       });
       exportCSV(csvData, `leads-${new Date().toISOString().split('T')[0]}.csv`);

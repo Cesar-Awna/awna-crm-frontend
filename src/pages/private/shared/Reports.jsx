@@ -191,6 +191,7 @@ const Reports = () => {
         'BU': businessUnits.find((b) => b._id === lead.businessUnitId)?.name || '—',
         'Ejecutivo': executives.find((e) => e._id === lead.ownerUserId)?.fullName || '—',
         'Ingreso': formatDate(lead.createdAt),
+        'Fecha de cierre': lead.closedAt ? formatDate(lead.closedAt) : '—',
       }));
       exportCSV(csvData, `reporte-leads-${new Date().toISOString().split('T')[0]}.csv`);
     } finally {
