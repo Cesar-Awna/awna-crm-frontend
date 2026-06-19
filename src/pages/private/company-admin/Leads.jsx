@@ -356,10 +356,10 @@ const AdminLeads = () => {
             <CardTitle>Filtros</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {/* Fila 1: dropdowns */}
-            <div className="flex flex-wrap items-center gap-3">
+            {/* Fila 1: dropdowns en grid fijo */}
+            <div className="grid grid-cols-3 gap-3 lg:grid-cols-6">
               <select
-                className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                className="h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                 value={leadFilters.businessUnitId}
                 onChange={(e) => setLeadFilters((f) => ({ ...f, businessUnitId: e.target.value }))}
               >
@@ -368,9 +368,8 @@ const AdminLeads = () => {
                   <option key={bu._id} value={bu._id}>{bu.code} — {bu.name}</option>
                 ))}
               </select>
-
               <select
-                className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                className="h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                 value={leadFilters.ownerUserId}
                 onChange={(e) => setLeadFilters((f) => ({ ...f, ownerUserId: e.target.value }))}
               >
@@ -379,9 +378,8 @@ const AdminLeads = () => {
                   <option key={u._id} value={u._id}>{u.fullName}</option>
                 ))}
               </select>
-
               <select
-                className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                className="h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                 value={leadFilters.status}
                 onChange={(e) => setLeadFilters((f) => ({ ...f, status: e.target.value }))}
               >
@@ -390,9 +388,8 @@ const AdminLeads = () => {
                   <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>
-
               <select
-                className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                className="h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                 value={leadFilters.fuenteLead}
                 onChange={(e) => setLeadFilters((f) => ({ ...f, fuenteLead: e.target.value }))}
               >
@@ -401,9 +398,8 @@ const AdminLeads = () => {
                   <option key={o} value={o}>{o}</option>
                 ))}
               </select>
-
               <select
-                className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                className="h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                 value={leadFilters.productoCotizado}
                 onChange={(e) => setLeadFilters((f) => ({ ...f, productoCotizado: e.target.value }))}
               >
@@ -412,11 +408,11 @@ const AdminLeads = () => {
                   <option key={o} value={o}>{o}</option>
                 ))}
               </select>
-
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
+                className="h-10"
                 onClick={() =>
                   setLeadFilters({ businessUnitId: '', ownerUserId: '', status: '', fuenteLead: '', productoCotizado: '', createdAtFrom: '', createdAtTo: '', closedAtFrom: '', closedAtTo: '' })
                 }
