@@ -355,20 +355,17 @@ const AdminLeads = () => {
           <CardHeader>
             <CardTitle>Filtros</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
+          <CardContent className="space-y-3">
+            {/* Fila 1: dropdowns */}
+            <div className="flex flex-wrap items-center gap-3">
               <select
                 className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                 value={leadFilters.businessUnitId}
-                onChange={(e) =>
-                  setLeadFilters((f) => ({ ...f, businessUnitId: e.target.value }))
-                }
+                onChange={(e) => setLeadFilters((f) => ({ ...f, businessUnitId: e.target.value }))}
               >
                 <option value="">Todas las unidades</option>
                 {businessUnits.map((bu) => (
-                  <option key={bu._id} value={bu._id}>
-                    {bu.code} — {bu.name}
-                  </option>
+                  <option key={bu._id} value={bu._id}>{bu.code} — {bu.name}</option>
                 ))}
               </select>
 
@@ -379,9 +376,7 @@ const AdminLeads = () => {
               >
                 <option value="">Todos los ejecutivos</option>
                 {executives.map((u) => (
-                  <option key={u._id} value={u._id}>
-                    {u.fullName}
-                  </option>
+                  <option key={u._id} value={u._id}>{u.fullName}</option>
                 ))}
               </select>
 
@@ -392,9 +387,7 @@ const AdminLeads = () => {
               >
                 <option value="">Todos los estados</option>
                 {LEAD_STATUSES.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
+                  <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>
 
@@ -420,42 +413,6 @@ const AdminLeads = () => {
                 ))}
               </select>
 
-              <div className="flex flex-col gap-1">
-                <span className="text-xs text-slate-400">Ingreso desde / hasta</span>
-                <div className="flex gap-2">
-                  <input
-                    type="date"
-                    className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
-                    value={leadFilters.createdAtFrom}
-                    onChange={(e) => setLeadFilters((f) => ({ ...f, createdAtFrom: e.target.value }))}
-                  />
-                  <input
-                    type="date"
-                    className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
-                    value={leadFilters.createdAtTo}
-                    onChange={(e) => setLeadFilters((f) => ({ ...f, createdAtTo: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <span className="text-xs text-slate-400">Cierre desde / hasta</span>
-                <div className="flex gap-2">
-                  <input
-                    type="date"
-                    className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
-                    value={leadFilters.closedAtFrom}
-                    onChange={(e) => setLeadFilters((f) => ({ ...f, closedAtFrom: e.target.value }))}
-                  />
-                  <input
-                    type="date"
-                    className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
-                    value={leadFilters.closedAtTo}
-                    onChange={(e) => setLeadFilters((f) => ({ ...f, closedAtTo: e.target.value }))}
-                  />
-                </div>
-              </div>
-
               <Button
                 type="button"
                 variant="outline"
@@ -466,6 +423,29 @@ const AdminLeads = () => {
               >
                 Limpiar filtros
               </Button>
+            </div>
+
+            {/* Fila 2: filtros de fecha */}
+            <div className="flex flex-wrap items-end gap-6">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-slate-400">Ingreso desde / hasta</span>
+                <div className="flex gap-2">
+                  <input type="date" className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                    value={leadFilters.createdAtFrom} onChange={(e) => setLeadFilters((f) => ({ ...f, createdAtFrom: e.target.value }))} />
+                  <input type="date" className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                    value={leadFilters.createdAtTo} onChange={(e) => setLeadFilters((f) => ({ ...f, createdAtTo: e.target.value }))} />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-slate-400">Cierre desde / hasta</span>
+                <div className="flex gap-2">
+                  <input type="date" className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                    value={leadFilters.closedAtFrom} onChange={(e) => setLeadFilters((f) => ({ ...f, closedAtFrom: e.target.value }))} />
+                  <input type="date" className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                    value={leadFilters.closedAtTo} onChange={(e) => setLeadFilters((f) => ({ ...f, closedAtTo: e.target.value }))} />
+                </div>
+              </div>
+            </div>
             </div>
           </CardContent>
         </Card>
