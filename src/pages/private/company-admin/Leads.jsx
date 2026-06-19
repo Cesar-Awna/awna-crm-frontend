@@ -40,6 +40,10 @@ const AdminLeads = () => {
     status: '',
     fuenteLead: '',
     productoCotizado: '',
+    createdAtFrom: '',
+    createdAtTo: '',
+    closedAtFrom: '',
+    closedAtTo: '',
   });
   const [reassignModal, setReassignModal] = useState({ open: false, leadId: null });
   const [reassignUserId, setReassignUserId] = useState('');
@@ -99,6 +103,10 @@ const AdminLeads = () => {
         if (leadFilters.status) params.status = leadFilters.status;
         if (leadFilters.fuenteLead) params.fuenteLead = leadFilters.fuenteLead;
         if (leadFilters.productoCotizado) params.productoCotizado = leadFilters.productoCotizado;
+        if (leadFilters.createdAtFrom) params.createdAtFrom = leadFilters.createdAtFrom;
+        if (leadFilters.createdAtTo) params.createdAtTo = leadFilters.createdAtTo;
+        if (leadFilters.closedAtFrom) params.closedAtFrom = leadFilters.closedAtFrom;
+        if (leadFilters.closedAtTo) params.closedAtTo = leadFilters.closedAtTo;
 
         const statsParams = {};
         if (leadFilters.businessUnitId) statsParams.businessUnitId = leadFilters.businessUnitId;
@@ -223,6 +231,10 @@ const AdminLeads = () => {
         if (leadFilters.status)         params.status         = leadFilters.status;
         if (leadFilters.fuenteLead)     params.fuenteLead     = leadFilters.fuenteLead;
         if (leadFilters.productoCotizado) params.productoCotizado = leadFilters.productoCotizado;
+        if (leadFilters.createdAtFrom)  params.createdAtFrom  = leadFilters.createdAtFrom;
+        if (leadFilters.createdAtTo)    params.createdAtTo    = leadFilters.createdAtTo;
+        if (leadFilters.closedAtFrom)   params.closedAtFrom   = leadFilters.closedAtFrom;
+        if (leadFilters.closedAtTo)     params.closedAtTo     = leadFilters.closedAtTo;
         const res = await LeadsService.getAll(params);
         if (!res?.success || !Array.isArray(res.data) || res.data.length === 0) break;
         allLeads = [...allLeads, ...res.data];
@@ -401,12 +413,48 @@ const AdminLeads = () => {
                 ))}
               </select>
 
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-slate-400">Ingreso desde / hasta</span>
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                    value={leadFilters.createdAtFrom}
+                    onChange={(e) => setLeadFilters((f) => ({ ...f, createdAtFrom: e.target.value }))}
+                  />
+                  <input
+                    type="date"
+                    className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                    value={leadFilters.createdAtTo}
+                    onChange={(e) => setLeadFilters((f) => ({ ...f, createdAtTo: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-slate-400">Cierre desde / hasta</span>
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                    value={leadFilters.closedAtFrom}
+                    onChange={(e) => setLeadFilters((f) => ({ ...f, closedAtFrom: e.target.value }))}
+                  />
+                  <input
+                    type="date"
+                    className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
+                    value={leadFilters.closedAtTo}
+                    onChange={(e) => setLeadFilters((f) => ({ ...f, closedAtTo: e.target.value }))}
+                  />
+                </div>
+              </div>
+
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  setLeadFilters({ businessUnitId: '', ownerUserId: '', status: '', fuenteLead: '', productoCotizado: '' })
+                  setLeadFilters({ businessUnitId: '', ownerUserId: '', status: '', fuenteLead: '', productoCotizado: '', createdAtFrom: '', createdAtTo: '', closedAtFrom: '', closedAtTo: '' })
                 }
               >
                 Limpiar filtros
