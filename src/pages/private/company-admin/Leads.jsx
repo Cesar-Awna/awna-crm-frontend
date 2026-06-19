@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui
 import { Button } from '../../../components/ui/button.jsx';
 import LeadsService from '../../../services/Leads.js';
 import UsersService from '../../../services/Users.js';
+import AuthService from '../../../services/Auth.js';
 import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import { LEAD_STATUSES, getStatusLabel } from '../../../lib/leadFormMappers.js';
 import { exportCSV } from '../../../utils/exportCSV.js';
@@ -59,11 +60,17 @@ const AdminLeads = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [usersRes, busRes] = await Promise.all([
+        const [usersRes, busRes, meRes] = await Promise.all([
           UsersService.getExecutives(),
           BusinessUnitsService.getAll(),
+          AuthService.getMe(),
         ]);
-        if (usersRes?.success) setUsers(usersRes.data || []);
+        const execList = usersRes?.success ? (usersRes.data || []) : [];
+        const me = meRes?.success ? meRes.data : null;
+        // include the current supervisor so their own leads show their name
+        const meUser = me?.user;
+        const alreadyIn = meUser ? execList.some((u) => u._id === String(meUser._id)) : true;
+        setUsers(alreadyIn || !meUser ? execList : [{ _id: String(meUser._id), fullName: meUser.fullName }, ...execList]);
         if (busRes?.success) setBusinessUnits(busRes.data || []);
       } catch (e) {
         console.error('Error loading initial data:', e);
