@@ -362,7 +362,7 @@ const AdminLeads = () => {
             {/* Buscador por nombre */}
             <input
               type="text"
-              placeholder="Buscar por nombre de empresa..."
+              placeholder="Buscar por RUT empresa..."
               className="h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50 placeholder:text-slate-500"
               value={leadFilters.q}
               onChange={(e) => setLeadFilters((f) => ({ ...f, q: e.target.value }))}
