@@ -45,6 +45,7 @@ const AdminLeads = () => {
     createdAtTo: '',
     closedAtFrom: '',
     closedAtTo: '',
+    q: '',
   });
   const [reassignModal, setReassignModal] = useState({ open: false, leadId: null });
   const [reassignUserId, setReassignUserId] = useState('');
@@ -114,6 +115,7 @@ const AdminLeads = () => {
         if (leadFilters.createdAtTo) params.createdAtTo = leadFilters.createdAtTo;
         if (leadFilters.closedAtFrom) params.closedAtFrom = leadFilters.closedAtFrom;
         if (leadFilters.closedAtTo) params.closedAtTo = leadFilters.closedAtTo;
+        if (leadFilters.q) params.q = leadFilters.q;
 
         const statsParams = {};
         if (leadFilters.businessUnitId) statsParams.businessUnitId = leadFilters.businessUnitId;
@@ -242,6 +244,7 @@ const AdminLeads = () => {
         if (leadFilters.createdAtTo)    params.createdAtTo    = leadFilters.createdAtTo;
         if (leadFilters.closedAtFrom)   params.closedAtFrom   = leadFilters.closedAtFrom;
         if (leadFilters.closedAtTo)     params.closedAtTo     = leadFilters.closedAtTo;
+        if (leadFilters.q)              params.q              = leadFilters.q;
         const res = await LeadsService.getAll(params);
         if (!res?.success || !Array.isArray(res.data) || res.data.length === 0) break;
         allLeads = [...allLeads, ...res.data];
@@ -356,6 +359,14 @@ const AdminLeads = () => {
             <CardTitle>Filtros</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            {/* Buscador por nombre */}
+            <input
+              type="text"
+              placeholder="Buscar por nombre de empresa..."
+              className="h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50 placeholder:text-slate-500"
+              value={leadFilters.q}
+              onChange={(e) => setLeadFilters((f) => ({ ...f, q: e.target.value }))}
+            />
             {/* Fila 1: dropdowns en grid fijo */}
             <div className="grid grid-cols-3 gap-3 lg:grid-cols-6">
               <select
@@ -414,7 +425,7 @@ const AdminLeads = () => {
                 size="sm"
                 className="h-10"
                 onClick={() =>
-                  setLeadFilters({ businessUnitId: '', ownerUserId: '', status: '', fuenteLead: '', productoCotizado: '', createdAtFrom: '', createdAtTo: '', closedAtFrom: '', closedAtTo: '' })
+                  setLeadFilters({ businessUnitId: '', ownerUserId: '', status: '', fuenteLead: '', productoCotizado: '', createdAtFrom: '', createdAtTo: '', closedAtFrom: '', closedAtTo: '', q: '' })
                 }
               >
                 Limpiar filtros
