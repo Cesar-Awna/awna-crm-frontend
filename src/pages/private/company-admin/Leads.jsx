@@ -249,6 +249,35 @@ const AdminLeads = () => {
     }
   };
 
+  const handleDeleteUnassigned = async (leadId) => {
+    try {
+      const res = await LeadsService.deleteLead(leadId);
+      if (res?.success) {
+        setUnassignedLeads((prev) => prev.filter((l) => l._id !== leadId));
+        setSelectedLeadIds((prev) => { const next = new Set(prev); next.delete(leadId); return next; });
+      } else {
+        setMessage(res?.message || 'Error al eliminar.');
+      }
+    } catch {
+      setMessage('Error al eliminar.');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedLeadIds.size === 0) return;
+    setBulkAssigning(true);
+    try {
+      await Promise.all(Array.from(selectedLeadIds).map((id) => LeadsService.deleteLead(id)));
+      setUnassignedLeads((prev) => prev.filter((l) => !selectedLeadIds.has(l._id)));
+      setSelectedLeadIds(new Set());
+      setMessage(`${selectedLeadIds.size} leads eliminados.`);
+    } catch {
+      setMessage('Error al eliminar leads.');
+    } finally {
+      setBulkAssigning(false);
+    }
+  };
+
   const handleBulkAssign = async () => {
     if (!bulkAssignUserId || selectedLeadIds.size === 0) return;
     setBulkAssigning(true);
@@ -449,7 +478,8 @@ const AdminLeads = () => {
                         <th className="pb-2 pr-4">RUT</th>
                         <th className="pb-2 pr-4">Contacto</th>
                         <th className="pb-2 pr-4">Teléfono</th>
-                        <th className="pb-2">Ingreso</th>
+                        <th className="pb-2 pr-4">Ingreso</th>
+                        <th className="pb-2"></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -473,7 +503,15 @@ const AdminLeads = () => {
                           <td className="py-2 pr-4 font-mono text-xs">{getLeadField(lead, 'rutEmpresa')}</td>
                           <td className="py-2 pr-4 text-xs">{getLeadField(lead, 'nombreContacto')}</td>
                           <td className="py-2 pr-4 text-xs">{getLeadField(lead, 'telefono')}</td>
-                          <td className="py-2 text-xs text-slate-400">{formatDate(lead.createdAt)}</td>
+                          <td className="py-2 pr-4 text-xs text-slate-400">{formatDate(lead.createdAt)}</td>
+                          <td className="py-2" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => handleDeleteUnassigned(lead._id)}
+                              className="text-xs text-rose-400 hover:text-rose-300 transition-colors"
+                            >
+                              Eliminar
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -508,6 +546,14 @@ const AdminLeads = () => {
             >
               {bulkAssigning ? 'Asignando…' : 'Confirmar'}
             </Button>
+            <div className="w-px h-6 bg-slate-600" />
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkAssigning}
+              className="text-sm text-rose-400 hover:text-rose-300 transition-colors disabled:opacity-50"
+            >
+              Eliminar seleccionados
+            </button>
             <button
               onClick={() => { setSelectedLeadIds(new Set()); setBulkAssignUserId(''); }}
               className="text-slate-400 hover:text-slate-200 text-sm"
