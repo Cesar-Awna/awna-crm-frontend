@@ -30,6 +30,7 @@ const STATUS_BADGE = {
 
 const AdminLeads = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('leads');
   const [leads, setLeads] = useState([]);
   const [loadingLeads, setLoadingLeads] = useState(true);
   const [leadStats, setLeadStats] = useState({ total: 0, byStatus: {} });
@@ -57,6 +58,13 @@ const AdminLeads = () => {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const pagination = usePagination(1, 20);
+
+  // Unassigned tab state
+  const [unassignedLeads, setUnassignedLeads] = useState([]);
+  const [loadingUnassigned, setLoadingUnassigned] = useState(false);
+  const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
+  const [bulkAssignUserId, setBulkAssignUserId] = useState('');
+  const [bulkAssigning, setBulkAssigning] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -200,12 +208,81 @@ const AdminLeads = () => {
     }
   };
 
+  const loadUnassigned = async () => {
+    setLoadingUnassigned(true);
+    try {
+      const res = await LeadsService.getUnassigned();
+      if (res?.success && Array.isArray(res.data)) {
+        setUnassignedLeads(res.data);
+      } else {
+        setUnassignedLeads([]);
+      }
+    } catch {
+      setUnassignedLeads([]);
+    } finally {
+      setLoadingUnassigned(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUnassigned();
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'unassigned') loadUnassigned();
+  }, [activeTab]);
+
+  const handleToggleSelect = (id) => {
+    setSelectedLeadIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedLeadIds.size === unassignedLeads.length) {
+      setSelectedLeadIds(new Set());
+    } else {
+      setSelectedLeadIds(new Set(unassignedLeads.map((l) => l._id)));
+    }
+  };
+
+  const handleBulkAssign = async () => {
+    if (!bulkAssignUserId || selectedLeadIds.size === 0) return;
+    setBulkAssigning(true);
+    try {
+      const res = await LeadsService.bulkAssign({
+        leadIds: Array.from(selectedLeadIds),
+        ownerUserId: bulkAssignUserId,
+      });
+      if (res?.success) {
+        setMessage(`${res.data?.modifiedCount || selectedLeadIds.size} leads asignados correctamente.`);
+        setSelectedLeadIds(new Set());
+        setBulkAssignUserId('');
+        await loadUnassigned();
+      } else {
+        setMessage(res?.message || 'Error al asignar leads.');
+      }
+    } catch {
+      setMessage('Error al asignar leads.');
+    } finally {
+      setBulkAssigning(false);
+    }
+  };
+
   const handleImportSuccess = async () => {
-    setMessage('Leads importados correctamente.');
-    const leadsRes = await LeadsService.getAll(leadFilters);
-    if (leadsRes?.success && Array.isArray(leadsRes.data)) {
-      setLeads(leadsRes.data);
-      pagination.updatePaginationData(leadsRes.pagination);
+    if (activeTab === 'unassigned') {
+      setMessage('Leads importados. Ya puedes asignarlos.');
+      await loadUnassigned();
+    } else {
+      setMessage('Leads importados correctamente.');
+      const leadsRes = await LeadsService.getAll(leadFilters);
+      if (leadsRes?.success && Array.isArray(leadsRes.data)) {
+        setLeads(leadsRes.data);
+        pagination.updatePaginationData(leadsRes.pagination);
+      }
     }
   };
 
@@ -292,13 +369,155 @@ const AdminLeads = () => {
             <Button type="button" variant="outline" onClick={() => setImportModalOpen(true)}>
               ⬆ Importar Excel
             </Button>
-            <Button type="button" onClick={() => navigate('/leads/new')}>
-              + Nuevo lead
-            </Button>
+            {activeTab === 'leads' && (
+              <Button type="button" onClick={() => navigate('/leads/new')}>
+                + Nuevo lead
+              </Button>
+            )}
           </div>
         </header>
 
-        {loadingLeads ? (
+        {/* Tabs */}
+        <div className="mb-6 flex border-b border-slate-700">
+          <button
+            onClick={() => setActiveTab('leads')}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === 'leads'
+                ? 'border-b-2 border-sky-400 text-sky-400'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Leads
+          </button>
+          <button
+            onClick={() => setActiveTab('unassigned')}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === 'unassigned'
+                ? 'border-b-2 border-sky-400 text-sky-400'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Sin asignar
+            {unassignedLeads.length > 0 && (
+              <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-slate-900">
+                {unassignedLeads.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Unassigned tab view */}
+        {activeTab === 'unassigned' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>
+                  Sin asignar{' '}
+                  <span className="text-sm font-normal text-slate-400">({unassignedLeads.length})</span>
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {message && typeof message === 'string' && (
+                <div className="mb-4 rounded-md bg-emerald-500/20 px-4 py-2 text-sm text-emerald-300">
+                  {message}
+                </div>
+              )}
+              {loadingUnassigned ? (
+                <p className="text-sm text-slate-400">Cargando…</p>
+              ) : unassignedLeads.length === 0 ? (
+                <div className="py-12 text-center">
+                  <p className="text-slate-400">No hay leads sin asignar.</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Usa el botón "Importar Excel" para cargar leads y asignarlos después.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-700 text-left text-slate-400">
+                        <th className="pb-2 pr-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedLeadIds.size === unassignedLeads.length && unassignedLeads.length > 0}
+                            onChange={handleSelectAll}
+                            className="accent-sky-400"
+                          />
+                        </th>
+                        <th className="pb-2 pr-4">Razón Social</th>
+                        <th className="pb-2 pr-4">RUT</th>
+                        <th className="pb-2 pr-4">Contacto</th>
+                        <th className="pb-2 pr-4">Teléfono</th>
+                        <th className="pb-2">Ingreso</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {unassignedLeads.map((lead) => (
+                        <tr
+                          key={lead._id}
+                          className={`border-b border-slate-800 cursor-pointer transition-colors ${
+                            selectedLeadIds.has(lead._id) ? 'bg-sky-500/10' : 'hover:bg-slate-800/50'
+                          }`}
+                          onClick={() => handleToggleSelect(lead._id)}
+                        >
+                          <td className="py-2 pr-3" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={selectedLeadIds.has(lead._id)}
+                              onChange={() => handleToggleSelect(lead._id)}
+                              className="accent-sky-400"
+                            />
+                          </td>
+                          <td className="max-w-40 truncate py-2 pr-4 text-xs">{getLeadField(lead, 'razonSocial')}</td>
+                          <td className="py-2 pr-4 font-mono text-xs">{getLeadField(lead, 'rutEmpresa')}</td>
+                          <td className="py-2 pr-4 text-xs">{getLeadField(lead, 'nombreContacto')}</td>
+                          <td className="py-2 pr-4 text-xs">{getLeadField(lead, 'telefono')}</td>
+                          <td className="py-2 text-xs text-slate-400">{formatDate(lead.createdAt)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Floating action bar for bulk assign */}
+        {activeTab === 'unassigned' && selectedLeadIds.size > 0 && (
+          <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-3 rounded-xl border border-slate-600 bg-slate-800 px-5 py-3 shadow-2xl">
+            <span className="text-sm font-medium text-slate-200">
+              {selectedLeadIds.size} {selectedLeadIds.size === 1 ? 'lead seleccionado' : 'leads seleccionados'}
+            </span>
+            <select
+              className="h-9 rounded-md border border-slate-600 bg-slate-900 px-3 text-sm text-slate-50"
+              value={bulkAssignUserId}
+              onChange={(e) => setBulkAssignUserId(e.target.value)}
+            >
+              <option value="">Asignar a...</option>
+              {users.map((u) => (
+                <option key={u._id} value={u._id}>{u.fullName}</option>
+              ))}
+            </select>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!bulkAssignUserId || bulkAssigning}
+              onClick={handleBulkAssign}
+            >
+              {bulkAssigning ? 'Asignando…' : 'Confirmar'}
+            </Button>
+            <button
+              onClick={() => { setSelectedLeadIds(new Set()); setBulkAssignUserId(''); }}
+              className="text-slate-400 hover:text-slate-200 text-sm"
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'leads' && (loadingLeads ? (
           <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
             <Card>
               <CardContent className="pt-4">
@@ -352,9 +571,9 @@ const AdminLeads = () => {
               </CardContent>
             </Card>
           </div>
-        )}
+        ))}
 
-        <Card className="mb-6">
+        {activeTab === 'leads' && <><Card className="mb-6">
           <CardHeader>
             <CardTitle>Filtros</CardTitle>
           </CardHeader>
@@ -594,7 +813,7 @@ const AdminLeads = () => {
               </>
             )}
           </CardContent>
-        </Card>
+        </Card></>}
 
         {reassignModal.open && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -679,6 +898,7 @@ const AdminLeads = () => {
           isOpen={importModalOpen}
           onClose={() => setImportModalOpen(false)}
           onSuccess={handleImportSuccess}
+          skipAssign={activeTab === 'unassigned'}
         />
       </main>
     </div>

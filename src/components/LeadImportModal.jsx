@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx';
 import { Button } from './ui/button.jsx';
 import LeadsService from '../services/Leads.js';
 
-const LeadImportModal = ({ isOpen, onClose, onSuccess, buSchema }) => {
+const LeadImportModal = ({ isOpen, onClose, onSuccess, buSchema, skipAssign = false }) => {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -72,7 +72,7 @@ const LeadImportModal = ({ isOpen, onClose, onSuccess, buSchema }) => {
         'Razón Social': row['Razón Social'] || '',
       }));
 
-      const res = await LeadsService.bulkImport({ leads: leadsPayload });
+      const res = await LeadsService.bulkImport({ leads: leadsPayload, skipAssign });
 
       if (res?.success) {
         setResult({
@@ -144,7 +144,11 @@ const LeadImportModal = ({ isOpen, onClose, onSuccess, buSchema }) => {
                   ))}
                 </ul>
                 <div className="mt-2 pt-2 border-t border-blue-500/30">
-                  <p className="text-blue-200 italic">💡 Los leads se distribuirán equitativamente entre tus ejecutivos</p>
+                  <p className="text-blue-200 italic">
+                    {skipAssign
+                      ? '💡 Los leads quedarán sin asignar. Podrás asignarlos desde la sección "Sin asignar".'
+                      : '💡 Los leads se distribuirán equitativamente entre tus ejecutivos'}
+                  </p>
                 </div>
               </div>
 
