@@ -444,6 +444,25 @@ const AdminLeads = () => {
                   Sin asignar{' '}
                   <span className="text-sm font-normal text-slate-400">({unassignedLeads.length})</span>
                 </CardTitle>
+                {unassignedLeads.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400">Seleccionar</span>
+                    <select
+                      className="h-8 rounded-md border border-slate-700 bg-slate-900 px-2 text-sm text-slate-50"
+                      value=""
+                      onChange={(e) => {
+                        const n = parseInt(e.target.value);
+                        if (!n) return;
+                        setSelectedLeadIds(new Set(unassignedLeads.slice(0, n).map((l) => l._id)));
+                      }}
+                    >
+                      <option value="">— cantidad —</option>
+                      {[10, 20, 30, 40, 50, 60, 70].map((n) => (
+                        <option key={n} value={n}>{n} leads</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardContent>
