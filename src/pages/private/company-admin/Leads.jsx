@@ -113,6 +113,7 @@ const AdminLeads = () => {
         const params = {
           page: pagination.currentPage,
           limit: pagination.limit,
+          assigned: 'true',
         };
         if (leadFilters.businessUnitId) params.businessUnitId = leadFilters.businessUnitId;
         if (leadFilters.ownerUserId) params.ownerUserId = leadFilters.ownerUserId;
@@ -340,7 +341,7 @@ const AdminLeads = () => {
       let allLeads = [];
       let page = 1;
       while (true) {
-        const params = { page, limit: 100 };
+        const params = { page, limit: 100, assigned: 'true' };
         if (leadFilters.businessUnitId) params.businessUnitId = leadFilters.businessUnitId;
         if (leadFilters.ownerUserId)    params.ownerUserId    = leadFilters.ownerUserId;
         if (leadFilters.status)         params.status         = leadFilters.status;
