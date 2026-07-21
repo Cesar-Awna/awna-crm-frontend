@@ -494,6 +494,7 @@ const AdminLeads = () => {
                             className="accent-sky-400"
                           />
                         </th>
+                        <th className="pb-2 pr-3 text-slate-500">#</th>
                         <th className="pb-2 pr-4">Razón Social</th>
                         <th className="pb-2 pr-4">RUT</th>
                         <th className="pb-2 pr-4">Contacto</th>
@@ -519,6 +520,7 @@ const AdminLeads = () => {
                               className="accent-sky-400"
                             />
                           </td>
+                          <td className="py-2 pr-3 text-xs text-slate-500">{idx + 1}</td>
                           <td className="max-w-40 truncate py-2 pr-4 text-xs">{getLeadField(lead, 'razonSocial')}</td>
                           <td className="py-2 pr-4 font-mono text-xs">{getLeadField(lead, 'rutEmpresa')}</td>
                           <td className="py-2 pr-4 text-xs">{getLeadField(lead, 'nombreContacto')}</td>
