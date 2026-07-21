@@ -504,7 +504,7 @@ const AdminLeads = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {unassignedLeads.map((lead) => (
+                      {unassignedLeads.map((lead, idx) => (
                         <tr
                           key={lead._id}
                           className={`border-b border-slate-800 cursor-pointer transition-colors ${
