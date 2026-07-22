@@ -8,6 +8,7 @@ class MetricsService {
   getSummary = () => instance.get('/api/metrics/summary');
   getActivity = (params = {}) => instance.get('/api/metrics/activity', { params });
   getActivityCounters = () => instance.get('/api/metrics/activity-counters');
+  getExecutiveReport = (params = {}) => instance.get('/api/metrics/executive-report', { params });
 }
 
 const Metrics = new MetricsService();

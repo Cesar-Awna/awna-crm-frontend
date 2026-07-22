@@ -30,6 +30,24 @@ const PERIODS = [
   { value: 'month', label: 'Mes' },
 ];
 
+const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const WORK_HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+
+const getDayLabel = (dateStr) => {
+  const d = new Date(dateStr + 'T12:00:00');
+  return DAY_LABELS[d.getDay()];
+};
+
+const heatColor = (value, max) => {
+  if (!value || !max) return 'transparent';
+  const intensity = Math.round((value / max) * 100);
+  if (intensity === 0) return 'transparent';
+  if (intensity < 25) return 'rgba(56, 189, 248, 0.2)';
+  if (intensity < 50) return 'rgba(56, 189, 248, 0.45)';
+  if (intensity < 75) return 'rgba(56, 189, 248, 0.7)';
+  return 'rgba(56, 189, 248, 0.95)';
+};
+
 const AdminMetrics = () => {
   const [conversion, setConversion]         = useState(null);
   const [summary, setSummary]               = useState(null);
@@ -38,6 +56,8 @@ const AdminMetrics = () => {
   const [activityData, setActivityData]     = useState(null);
   const [activityPeriod, setActivityPeriod] = useState('today');
   const [activityBuId, setActivityBuId]     = useState('');
+  const [execReport, setExecReport]         = useState(null);
+  const [reportLoading, setReportLoading]   = useState(true);
 
   useEffect(() => {
     BusinessUnitsService.getAll()
@@ -71,6 +91,14 @@ const AdminMetrics = () => {
       .then((res) => { if (res?.success) setActivityData(res.data); })
       .catch(() => {});
   }, [activityPeriod, activityBuId]);
+
+  useEffect(() => {
+    setReportLoading(true);
+    MetricsService.getExecutiveReport()
+      .then((res) => { if (res?.success) setExecReport(res.data); })
+      .catch(() => {})
+      .finally(() => setReportLoading(false));
+  }, []);
 
   const total    = conversion?.total || 0;
   const won      = conversion?.won || 0;
@@ -231,7 +259,7 @@ const AdminMetrics = () => {
                       },
                     ].map((row) => (
                       <div key={row.key} className="flex items-center gap-3">
-                        <span className="w-44 flex-shrink-0 text-xs text-slate-400">{row.label}</span>
+                        <span className="w-44 shrink-0 text-xs text-slate-400">{row.label}</span>
                         <div className="flex-1 overflow-hidden rounded-full bg-slate-700 h-2">
                           <div
                             className="h-full rounded-full transition-all duration-500"
@@ -277,6 +305,123 @@ const AdminMetrics = () => {
                     <p className="text-sm text-slate-400">Unidades de negocio</p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Productividad por ejecutivo — llamadas últimos 7 días */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Productividad por ejecutivo — últimos 7 días</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {reportLoading ? (
+                  <p className="text-sm text-slate-400">Cargando…</p>
+                ) : !execReport?.executives?.length ? (
+                  <p className="text-sm text-slate-400">Sin datos de ejecutivos.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-700 text-left text-xs text-slate-400">
+                          <th className="pb-2 pr-4">Ejecutivo</th>
+                          <th className="pb-2 pr-4 text-center text-emerald-400">% Cierre</th>
+                          {execReport.days.map((d) => (
+                            <th key={d} className="pb-2 px-2 text-center">{getDayLabel(d)}</th>
+                          ))}
+                          <th className="pb-2 pl-4 text-center text-sky-400">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {execReport.executives.map((exec) => {
+                          const total = exec.callsByDay.reduce((a, b) => a + b, 0);
+                          return (
+                            <tr key={exec.userId} className="border-b border-slate-800">
+                              <td className="py-2 pr-4 font-medium text-slate-200 whitespace-nowrap">{exec.fullName}</td>
+                              <td className="py-2 pr-4 text-center">
+                                <span className={`font-bold ${exec.closureRate >= 20 ? 'text-emerald-400' : exec.closureRate >= 10 ? 'text-amber-400' : 'text-slate-400'}`}>
+                                  {exec.closureRate}%
+                                </span>
+                              </td>
+                              {exec.callsByDay.map((count, i) => (
+                                <td key={i} className="py-2 px-2 text-center tabular-nums text-slate-300">
+                                  {count || <span className="text-slate-600">—</span>}
+                                </td>
+                              ))}
+                              <td className="py-2 pl-4 text-center font-bold text-sky-400 tabular-nums">{total}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Mapa de calor — actividad por hora */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Mapa de calor — actividad por hora</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {reportLoading ? (
+                  <p className="text-sm text-slate-400">Cargando…</p>
+                ) : !execReport?.executives?.length ? (
+                  <p className="text-sm text-slate-400">Sin datos de ejecutivos.</p>
+                ) : (() => {
+                  const maxVal = Math.max(
+                    ...execReport.executives.flatMap((e) => WORK_HOURS.map((h) => e.callsByHour[h] || 0)),
+                    1
+                  );
+                  return (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b border-slate-700 text-slate-400">
+                            <th className="pb-2 pr-4 text-left">Ejecutivo</th>
+                            {WORK_HOURS.map((h) => (
+                              <th key={h} className="pb-2 px-1 text-center">{h}h</th>
+                            ))}
+                            <th className="pb-2 pl-3 text-center text-sky-400">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {execReport.executives.map((exec) => {
+                            const total = WORK_HOURS.reduce((s, h) => s + (exec.callsByHour[h] || 0), 0);
+                            return (
+                              <tr key={exec.userId} className="border-b border-slate-800">
+                                <td className="py-1.5 pr-4 font-medium text-slate-200 whitespace-nowrap">{exec.fullName}</td>
+                                {WORK_HOURS.map((h) => {
+                                  const val = exec.callsByHour[h] || 0;
+                                  return (
+                                    <td
+                                      key={h}
+                                      className="py-1.5 px-1 text-center rounded tabular-nums"
+                                      style={{ backgroundColor: heatColor(val, maxVal) }}
+                                      title={`${h}:00 — ${val} llamadas`}
+                                    >
+                                      {val || ''}
+                                    </td>
+                                  );
+                                })}
+                                <td className="py-1.5 pl-3 text-center font-bold text-sky-400 tabular-nums">{total}</td>
+                              </tr>
+                            );
+                          })()}
+                        </tbody>
+                      </table>
+                      <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
+                        <span>Intensidad:</span>
+                        {[0.2, 0.45, 0.7, 0.95].map((op, i) => (
+                          <span key={i} className="flex items-center gap-1">
+                            <span className="inline-block w-4 h-4 rounded" style={{ backgroundColor: `rgba(56,189,248,${op})` }} />
+                            {['Bajo', 'Medio', 'Alto', 'Muy alto'][i]}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </>
