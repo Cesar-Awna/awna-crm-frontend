@@ -21,8 +21,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui
 
 const InfoTip = ({ text }) => (
   <span className="group relative ml-1.5 inline-block cursor-help align-middle">
-    <span className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-500 text-[10px] leading-none text-slate-400">?</span>
-    <span className="invisible group-hover:visible pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-xs font-normal leading-relaxed text-slate-300 shadow-xl">
+    <span className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-500 text-[10px] leading-none text-slate-400 select-none">?</span>
+    <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden w-72 -translate-x-1/2 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2.5 text-xs font-normal leading-relaxed text-slate-300 shadow-2xl group-hover:block whitespace-pre-line">
       {text}
       <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-600" />
     </span>
@@ -344,7 +344,7 @@ const AdminMetrics = () => {
               <CardHeader>
                 <CardTitle>
                   Productividad por ejecutivo — últimos 7 días
-                  <InfoTip text="Muestra cuántas actividades registró cada ejecutivo por día (llamadas, seguimientos, emails, WhatsApps, etc.). Solo se contabilizan las acciones marcadas con el botón 'Registrar' en cada lead." />
+                  <InfoTip text={"Actividades registradas por cada ejecutivo en los últimos 7 días (llamadas, seguimientos, emails, WhatsApps, etc.).\n\n% Cierre: de todos sus leads cerrados (ganados + perdidos), qué porcentaje fue ganado. Ejemplo: 3 ganados de 10 cerrados = 30%.\n\nTotal: suma de actividades de los 7 días."} />
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -358,17 +358,11 @@ const AdminMetrics = () => {
                       <thead>
                         <tr className="border-b border-slate-700 text-left text-xs text-slate-400">
                           <th className="pb-2 pr-4">Ejecutivo</th>
-                          <th className="pb-2 pr-4 text-center text-emerald-400">
-                            % Cierre
-                            <InfoTip text="De todos los leads cerrados del ejecutivo (ganados + perdidos), qué porcentaje fue ganado. Ejemplo: 3 ganados de 10 cerrados = 30%." />
-                          </th>
+                          <th className="pb-2 pr-4 text-center text-emerald-400">% Cierre</th>
                           {execReport.days.map((d) => (
                             <th key={d} className="pb-2 px-2 text-center">{getDayLabel(d)}</th>
                           ))}
-                          <th className="pb-2 pl-4 text-center text-sky-400">
-                            Total
-                            <InfoTip text="Suma de todas las actividades registradas en los últimos 7 días." />
-                          </th>
+                          <th className="pb-2 pl-4 text-center text-sky-400">Total</th>
                         </tr>
                       </thead>
                       <tbody>
