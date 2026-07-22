@@ -1,4 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Component } from 'react';
+
+class MetricsErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 32, color: '#f87171', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+          <strong>Error en Métricas (comparte este mensaje para solucionar):</strong>{'\n\n'}
+          {this.state.error?.message}{'\n\n'}
+          {this.state.error?.stack}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import Sidebar from '../../../components/Sidebar.jsx';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx';
 import MetricsService from '../../../services/Metrics.js';
@@ -429,4 +446,10 @@ const AdminMetrics = () => {
   );
 };
 
-export default AdminMetrics;
+const AdminMetricsWithBoundary = () => (
+  <MetricsErrorBoundary>
+    <AdminMetrics />
+  </MetricsErrorBoundary>
+);
+
+export default AdminMetricsWithBoundary;
