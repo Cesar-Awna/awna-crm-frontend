@@ -18,6 +18,16 @@ class MetricsErrorBoundary extends Component {
 }
 import Sidebar from '../../../components/Sidebar.jsx';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx';
+
+const InfoTip = ({ text }) => (
+  <span className="group relative ml-1.5 inline-block cursor-help align-middle">
+    <span className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-500 text-[10px] leading-none text-slate-400">?</span>
+    <span className="invisible group-hover:visible pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-xs font-normal leading-relaxed text-slate-300 shadow-xl">
+      {text}
+      <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-600" />
+    </span>
+  </span>
+);
 import MetricsService from '../../../services/Metrics.js';
 import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import { LEAD_STATUSES, getStatusLabel } from '../../../lib/leadFormMappers.js';
@@ -332,7 +342,10 @@ const AdminMetrics = () => {
             {/* Productividad por ejecutivo — llamadas últimos 7 días */}
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle>Productividad por ejecutivo — últimos 7 días</CardTitle>
+                <CardTitle>
+                  Productividad por ejecutivo — últimos 7 días
+                  <InfoTip text="Muestra cuántas actividades registró cada ejecutivo por día (llamadas, seguimientos, emails, WhatsApps, etc.). Solo se contabilizan las acciones marcadas con el botón 'Registrar' en cada lead." />
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {reportLoading ? (
@@ -345,11 +358,17 @@ const AdminMetrics = () => {
                       <thead>
                         <tr className="border-b border-slate-700 text-left text-xs text-slate-400">
                           <th className="pb-2 pr-4">Ejecutivo</th>
-                          <th className="pb-2 pr-4 text-center text-emerald-400">% Cierre</th>
+                          <th className="pb-2 pr-4 text-center text-emerald-400">
+                            % Cierre
+                            <InfoTip text="De todos los leads cerrados del ejecutivo (ganados + perdidos), qué porcentaje fue ganado. Ejemplo: 3 ganados de 10 cerrados = 30%." />
+                          </th>
                           {execReport.days.map((d) => (
                             <th key={d} className="pb-2 px-2 text-center">{getDayLabel(d)}</th>
                           ))}
-                          <th className="pb-2 pl-4 text-center text-sky-400">Total</th>
+                          <th className="pb-2 pl-4 text-center text-sky-400">
+                            Total
+                            <InfoTip text="Suma de todas las actividades registradas en los últimos 7 días." />
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -382,7 +401,10 @@ const AdminMetrics = () => {
             {/* Mapa de calor — actividad por hora */}
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle>Mapa de calor — actividad por hora</CardTitle>
+                <CardTitle>
+                  Mapa de calor — actividad por hora
+                  <InfoTip text="Muestra en qué horarios del día cada ejecutivo registra más actividad. Los colores van de gris (sin actividad) hasta verde intenso (muy alta actividad). Útil para identificar patrones de trabajo." />
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {reportLoading ? (
