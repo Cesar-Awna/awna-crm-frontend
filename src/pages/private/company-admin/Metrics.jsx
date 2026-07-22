@@ -344,7 +344,7 @@ const AdminMetrics = () => {
               <CardHeader>
                 <CardTitle>
                   Productividad por ejecutivo — últimos 7 días
-                  <InfoTip text={"Actividades registradas por cada ejecutivo en los últimos 7 días (llamadas, seguimientos, emails, WhatsApps, etc.).\n\n% Cierre: de todos sus leads cerrados (ganados + perdidos), qué porcentaje fue ganado. Ejemplo: 3 ganados de 10 cerrados = 30%.\n\nTotal: suma de actividades de los 7 días."} />
+                  <InfoTip text={"Actividades registradas por cada ejecutivo en los últimos 7 días (llamadas, seguimientos, emails, WhatsApps, etc.).\n\n% Cierre (número grande): leads cerrados en los últimos 7 días — qué % fue ganado. Muestra — si no cerró ninguno esta semana.\n\nhist. %: tasa de cierre histórica acumulada (todos los leads cerrados desde siempre).\n\nTotal: suma de actividades de los 7 días."} />
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -372,9 +372,18 @@ const AdminMetrics = () => {
                             <tr key={exec.userId} className="border-b border-slate-800">
                               <td className="py-2 pr-4 font-medium text-slate-200 whitespace-nowrap">{exec.fullName}</td>
                               <td className="py-2 pr-4 text-center">
-                                <span className={`font-bold ${exec.closureRate >= 20 ? 'text-emerald-400' : exec.closureRate >= 10 ? 'text-amber-400' : 'text-slate-400'}`}>
-                                  {exec.closureRate}%
-                                </span>
+                                {exec.closureRate7d != null ? (
+                                  <span className={`font-bold ${exec.closureRate7d >= 20 ? 'text-emerald-400' : exec.closureRate7d >= 10 ? 'text-amber-400' : 'text-slate-400'}`}>
+                                    {exec.closureRate7d}%
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-600">—</span>
+                                )}
+                                {exec.closureRate != null && (
+                                  <div className="text-[10px] text-slate-500 tabular-nums">
+                                    hist. {exec.closureRate}%
+                                  </div>
+                                )}
                               </td>
                               {exec.callsByDay.map((count, i) => (
                                 <td key={i} className="py-2 px-2 text-center tabular-nums text-slate-300">
