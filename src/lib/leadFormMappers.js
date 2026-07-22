@@ -59,8 +59,10 @@ export function mapApiLeadToFormState(lead, schema = []) {
 
   if (schema.length > 0) {
     for (const field of schema) {
-      // Prefer fields map, fall back to top-level property for existing leads
-      base[field.key] = lead.fields?.[field.key] ?? lead[field.key] ?? '';
+      const stored = lead.fields?.[field.key] ?? lead[field.key];
+      base[field.key] = field.type === 'multiselect'
+        ? (Array.isArray(stored) ? stored : [])
+        : (stored ?? '');
     }
   } else {
     // Legacy hardcoded fields
@@ -91,9 +93,8 @@ export function buildLeadPayload(f, options = {}) {
     payload.fields = {};
     for (const field of schema) {
       const val = f[field.key];
-      if (val !== undefined && val !== '') {
-        payload.fields[field.key] = val;
-      }
+      const isEmpty = val === undefined || val === '' || (Array.isArray(val) && val.length === 0);
+      if (!isEmpty) payload.fields[field.key] = val;
     }
   } else {
     // Legacy flat fields

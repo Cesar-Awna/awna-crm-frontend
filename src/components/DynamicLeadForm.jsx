@@ -17,8 +17,8 @@ const DynamicLeadForm = ({ schema = [], values = {}, onChange, disabled = false,
     );
   }
 
-  const inlineFields  = sorted.filter((f) => f.type !== 'textarea');
-  const textareaFields = sorted.filter((f) => f.type === 'textarea');
+  const inlineFields  = sorted.filter((f) => f.type !== 'textarea' && f.type !== 'multiselect');
+  const textareaFields = sorted.filter((f) => f.type === 'textarea' || f.type === 'multiselect');
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

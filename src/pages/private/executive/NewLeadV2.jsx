@@ -54,7 +54,7 @@ const schemaToEmptyForm = (schema) => {
     rescheduleCount: 0,
   };
   for (const field of schema) {
-    base[field.key] = field.type === 'number' ? 0 : '';
+    base[field.key] = field.type === 'number' ? 0 : field.type === 'multiselect' ? [] : '';
   }
   return base;
 };
