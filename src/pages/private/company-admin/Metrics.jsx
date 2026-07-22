@@ -115,6 +115,10 @@ const AdminMetrics = () => {
   const activityByType = activityData?.byType || {};
   const maxActivity = Math.max(...activityTypes.map((a) => activityByType[a.key] || 0), activityData?.closures || 0, 1);
 
+  const heatMaxVal = execReport?.executives?.length
+    ? Math.max(...execReport.executives.flatMap((e) => WORK_HOURS.map((h) => e.callsByHour[h] || 0)), 1)
+    : 1;
+
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-50">
       <Sidebar />
@@ -368,60 +372,54 @@ const AdminMetrics = () => {
                   <p className="text-sm text-slate-400">Cargando…</p>
                 ) : !execReport?.executives?.length ? (
                   <p className="text-sm text-slate-400">Sin datos de ejecutivos.</p>
-                ) : (() => {
-                  const maxVal = Math.max(
-                    ...execReport.executives.flatMap((e) => WORK_HOURS.map((h) => e.callsByHour[h] || 0)),
-                    1
-                  );
-                  return (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="border-b border-slate-700 text-slate-400">
-                            <th className="pb-2 pr-4 text-left">Ejecutivo</th>
-                            {WORK_HOURS.map((h) => (
-                              <th key={h} className="pb-2 px-1 text-center">{h}h</th>
-                            ))}
-                            <th className="pb-2 pl-3 text-center text-sky-400">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {execReport.executives.map((exec) => {
-                            const total = WORK_HOURS.reduce((s, h) => s + (exec.callsByHour[h] || 0), 0);
-                            return (
-                              <tr key={exec.userId} className="border-b border-slate-800">
-                                <td className="py-1.5 pr-4 font-medium text-slate-200 whitespace-nowrap">{exec.fullName}</td>
-                                {WORK_HOURS.map((h) => {
-                                  const val = exec.callsByHour[h] || 0;
-                                  return (
-                                    <td
-                                      key={h}
-                                      className="py-1.5 px-1 text-center rounded tabular-nums"
-                                      style={{ backgroundColor: heatColor(val, maxVal) }}
-                                      title={`${h}:00 — ${val} llamadas`}
-                                    >
-                                      {val || ''}
-                                    </td>
-                                  );
-                                })}
-                                <td className="py-1.5 pl-3 text-center font-bold text-sky-400 tabular-nums">{total}</td>
-                              </tr>
-                            );
-                          })()}
-                        </tbody>
-                      </table>
-                      <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
-                        <span>Intensidad:</span>
-                        {[0.2, 0.45, 0.7, 0.95].map((op, i) => (
-                          <span key={i} className="flex items-center gap-1">
-                            <span className="inline-block w-4 h-4 rounded" style={{ backgroundColor: `rgba(56,189,248,${op})` }} />
-                            {['Bajo', 'Medio', 'Alto', 'Muy alto'][i]}
-                          </span>
-                        ))}
-                      </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-700 text-slate-400">
+                          <th className="pb-2 pr-4 text-left">Ejecutivo</th>
+                          {WORK_HOURS.map((h) => (
+                            <th key={h} className="pb-2 px-1 text-center">{h}h</th>
+                          ))}
+                          <th className="pb-2 pl-3 text-center text-sky-400">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {execReport.executives.map((exec) => {
+                          const total = WORK_HOURS.reduce((s, h) => s + (exec.callsByHour[h] || 0), 0);
+                          return (
+                            <tr key={exec.userId} className="border-b border-slate-800">
+                              <td className="py-1.5 pr-4 font-medium text-slate-200 whitespace-nowrap">{exec.fullName}</td>
+                              {WORK_HOURS.map((h) => {
+                                const val = exec.callsByHour[h] || 0;
+                                return (
+                                  <td
+                                    key={h}
+                                    className="py-1.5 px-1 text-center rounded tabular-nums"
+                                    style={{ backgroundColor: heatColor(val, heatMaxVal) }}
+                                    title={`${h}:00 — ${val} llamadas`}
+                                  >
+                                    {val || ''}
+                                  </td>
+                                );
+                              })}
+                              <td className="py-1.5 pl-3 text-center font-bold text-sky-400 tabular-nums">{total}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
+                      <span>Intensidad:</span>
+                      {[0.2, 0.45, 0.7, 0.95].map((op, i) => (
+                        <span key={i} className="flex items-center gap-1">
+                          <span className="inline-block w-4 h-4 rounded" style={{ backgroundColor: `rgba(56,189,248,${op})` }} />
+                          {['Bajo', 'Medio', 'Alto', 'Muy alto'][i]}
+                        </span>
+                      ))}
                     </div>
-                  );
-                })()}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </>
