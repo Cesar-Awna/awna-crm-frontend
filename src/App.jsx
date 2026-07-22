@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BUProvider } from './contexts/BUContext.jsx';
 import Login from './pages/public/Login.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
 import DefaultRedirect from './components/DefaultRedirect.jsx';
@@ -26,6 +27,7 @@ import Support from './pages/private/super-admin/Support.jsx';
 
 function App() {
   return (
+    <BUProvider>
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -54,6 +56,7 @@ function App() {
         </Route>
       </Routes>
     </Router>
+    </BUProvider>
   );
 }
 

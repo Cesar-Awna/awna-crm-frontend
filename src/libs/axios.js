@@ -26,6 +26,12 @@ const createInstance = (baseURL) => {
           if (Array.isArray(businessUnitIds) && businessUnitIds.length > 0) {
             config.headers['x-business-unit-id'] = businessUnitIds[0];
           }
+
+          // COMPANY_ADMIN has empty businessUnitIds — use the BU switcher selection
+          if (!config.headers['x-business-unit-id']) {
+            const activeBuId = localStorage.getItem('activeBuId');
+            if (activeBuId) config.headers['x-business-unit-id'] = activeBuId;
+          }
         }
       } catch {
         // ignore parse errors

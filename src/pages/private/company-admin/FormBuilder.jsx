@@ -4,17 +4,24 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui
 import { Button } from '../../../components/ui/button.jsx';
 import { FloatingAlert } from '../../../components/ui/floating-alert.jsx';
 import BusinessUnitsService from '../../../services/BusinessUnits.js';
-import { getStoredSession } from '../../../lib/session.js';
 import { ChevronUp, ChevronDown, Trash2, Plus } from 'lucide-react';
 
 const FIELD_TYPES = [
-  { value: 'text',     label: 'Texto' },
-  { value: 'number',   label: 'Número' },
-  { value: 'email',    label: 'Email' },
-  { value: 'phone',    label: 'Teléfono' },
-  { value: 'select',   label: 'Selección' },
-  { value: 'date',     label: 'Fecha' },
-  { value: 'textarea', label: 'Área de texto' },
+  { value: 'text',        label: 'Texto' },
+  { value: 'number',      label: 'Número' },
+  { value: 'email',       label: 'Email' },
+  { value: 'phone',       label: 'Teléfono' },
+  { value: 'select',      label: 'Selección (una opción)' },
+  { value: 'multiselect', label: 'Selección múltiple' },
+  { value: 'date',        label: 'Fecha' },
+  { value: 'textarea',    label: 'Área de texto' },
+];
+
+const STAGE_TYPES = [
+  { value: 'open',    label: 'Abierto' },
+  { value: 'won',     label: 'Ganado' },
+  { value: 'lost',    label: 'Perdido' },
+  { value: 'invalid', label: 'Inválido' },
 ];
 
 const DEFAULT_ACTIVITY_TYPES = [
@@ -34,39 +41,57 @@ const inputClass =
   'w-full rounded-md border border-[var(--border-color)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500';
 
 const FormBuilder = () => {
-  const session = getStoredSession();
-  const buId = session?.businessUnitIds?.[0];
+  const [allBus,        setAllBus]        = useState([]);
+  const [busLoading,    setBusLoading]    = useState(true);
+  const [selectedBuId,  setSelectedBuId]  = useState('');
 
   const [activeTab, setActiveTab] = useState(0);
-  const [loading, setLoading]     = useState(true);
-  const [saving, setSaving]       = useState(false);
-  const [alert, setAlert]         = useState(null);
+  const [loading,   setLoading]   = useState(false);
+  const [saving,    setSaving]    = useState(false);
+  const [alert,     setAlert]     = useState(null);
 
   const [leadSchema,     setLeadSchema]     = useState([]);
   const [activityTypes,  setActivityTypes]  = useState([]);
   const [pipelineStages, setPipelineStages] = useState([]);
 
+  // Load all business units on mount
   useEffect(() => {
-    if (!buId) { setLoading(false); return; }
-    BusinessUnitsService.getSchema(buId)
+    BusinessUnitsService.getAll()
+      .then((res) => {
+        if (res?.success) {
+          const bus = res.data || [];
+          setAllBus(bus);
+          if (bus.length > 0) setSelectedBuId(String(bus[0]._id));
+        }
+      })
+      .finally(() => setBusLoading(false));
+  }, []);
+
+  // Load schema whenever selected BU changes
+  useEffect(() => {
+    if (!selectedBuId) return;
+    setLoading(true);
+    setLeadSchema([]);
+    setActivityTypes([]);
+    setPipelineStages([]);
+    BusinessUnitsService.getSchema(selectedBuId)
       .then((res) => {
         if (res?.success) {
           setLeadSchema(res.data.leadSchema || []);
           setActivityTypes(
-            res.data.activityTypes?.length
-              ? res.data.activityTypes
-              : DEFAULT_ACTIVITY_TYPES
+            res.data.activityTypes?.length ? res.data.activityTypes : DEFAULT_ACTIVITY_TYPES
           );
           setPipelineStages(res.data.pipelineStages || []);
         }
       })
       .finally(() => setLoading(false));
-  }, [buId]);
+  }, [selectedBuId]);
 
   const save = async () => {
+    if (!selectedBuId) return;
     setSaving(true);
     try {
-      const res = await BusinessUnitsService.updateSchema(buId, {
+      const res = await BusinessUnitsService.updateSchema(selectedBuId, {
         leadSchema,
         activityTypes,
         pipelineStages,
@@ -109,10 +134,7 @@ const FormBuilder = () => {
 
   /* ── Activity type actions ── */
   const addActivity = () =>
-    setActivityTypes((prev) => [
-      ...prev,
-      { key: '', label: '', pointValue: 1, dailyCap: 5 },
-    ]);
+    setActivityTypes((prev) => [...prev, { key: '', label: '', pointValue: 1, dailyCap: 5 }]);
 
   const updateActivity = (idx, patch) =>
     setActivityTypes((prev) => prev.map((a, i) => (i === idx ? { ...a, ...patch } : a)));
@@ -124,7 +146,7 @@ const FormBuilder = () => {
   const addStage = () =>
     setPipelineStages((prev) => [
       ...prev,
-      { key: '', label: '', order: prev.length, color: '#6366f1' },
+      { key: '', label: '', stageType: 'open', order: prev.length, color: '#6366f1' },
     ]);
 
   const updateStage = (idx, patch) =>
@@ -144,28 +166,51 @@ const FormBuilder = () => {
       return next.map((s, i) => ({ ...s, order: i }));
     });
 
+  const selectedBu = allBus.find((b) => String(b._id) === selectedBuId);
+
   return (
     <div className="flex min-h-screen bg-[var(--main-bg)]">
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-6">
         {alert && (
-          <FloatingAlert
-            type={alert.type}
-            message={alert.text}
-            onClose={() => setAlert(null)}
-          />
+          <FloatingAlert type={alert.type} message={alert.text} onClose={() => setAlert(null)} />
         )}
 
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-slate-50">Constructor de Formulario</h1>
-          <Button onClick={save} disabled={saving || !buId}>
+          <Button onClick={save} disabled={saving || !selectedBuId || loading}>
             {saving ? 'Guardando…' : 'Guardar cambios'}
           </Button>
         </div>
 
-        {!buId ? (
-          <p className="text-slate-400">No se encontró unidad de negocio en la sesión.</p>
-        ) : (
+        {/* BU selector */}
+        <div className="mb-4">
+          {busLoading ? (
+            <p className="text-sm text-slate-400">Cargando unidades de negocio…</p>
+          ) : allBus.length === 0 ? (
+            <p className="text-sm text-slate-400">No hay unidades de negocio disponibles.</p>
+          ) : (
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-slate-400 whitespace-nowrap">Unidad de negocio:</label>
+              <select
+                value={selectedBuId}
+                onChange={(e) => { setSelectedBuId(e.target.value); setActiveTab(0); }}
+                className="rounded-md border border-[var(--border-color)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              >
+                {allBus.map((bu) => (
+                  <option key={bu._id} value={String(bu._id)}>{bu.name}</option>
+                ))}
+              </select>
+              {selectedBu && (
+                <span className="text-xs text-slate-500">
+                  Código: {selectedBu.code}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {selectedBuId && (
           <Card>
             <CardHeader>
               <div className="flex gap-6 border-b border-[var(--border-color)] pb-3">
@@ -194,9 +239,7 @@ const FormBuilder = () => {
                   {activeTab === 0 && (
                     <div className="space-y-3">
                       {leadSchema.length === 0 && (
-                        <p className="text-sm text-slate-500 italic">
-                          Sin campos aún. Agrega el primero.
-                        </p>
+                        <p className="text-sm text-slate-500 italic">Sin campos aún. Agrega el primero.</p>
                       )}
                       {leadSchema.map((field, idx) => (
                         <div
@@ -204,18 +247,10 @@ const FormBuilder = () => {
                           className="flex items-start gap-2 rounded-lg border border-[var(--border-color)] bg-slate-800/40 p-3"
                         >
                           <div className="flex flex-col gap-1 pt-5">
-                            <button
-                              onClick={() => moveField(idx, -1)}
-                              disabled={idx === 0}
-                              className="text-slate-400 hover:text-slate-200 disabled:opacity-25"
-                            >
+                            <button onClick={() => moveField(idx, -1)} disabled={idx === 0} className="text-slate-400 hover:text-slate-200 disabled:opacity-25">
                               <ChevronUp size={14} />
                             </button>
-                            <button
-                              onClick={() => moveField(idx, 1)}
-                              disabled={idx === leadSchema.length - 1}
-                              className="text-slate-400 hover:text-slate-200 disabled:opacity-25"
-                            >
+                            <button onClick={() => moveField(idx, 1)} disabled={idx === leadSchema.length - 1} className="text-slate-400 hover:text-slate-200 disabled:opacity-25">
                               <ChevronDown size={14} />
                             </button>
                           </div>
@@ -223,29 +258,15 @@ const FormBuilder = () => {
                           <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
                             <div>
                               <p className="mb-1 text-xs text-slate-500">Clave (key)</p>
-                              <input
-                                value={field.key}
-                                onChange={(e) => updateField(idx, { key: e.target.value })}
-                                placeholder="ej: razonSocial"
-                                className={inputClass}
-                              />
+                              <input value={field.key} onChange={(e) => updateField(idx, { key: e.target.value })} placeholder="ej: razonSocial" className={inputClass} />
                             </div>
                             <div>
                               <p className="mb-1 text-xs text-slate-500">Etiqueta</p>
-                              <input
-                                value={field.label}
-                                onChange={(e) => updateField(idx, { label: e.target.value })}
-                                placeholder="ej: Razón Social"
-                                className={inputClass}
-                              />
+                              <input value={field.label} onChange={(e) => updateField(idx, { label: e.target.value })} placeholder="ej: Razón Social" className={inputClass} />
                             </div>
                             <div>
                               <p className="mb-1 text-xs text-slate-500">Tipo</p>
-                              <select
-                                value={field.type}
-                                onChange={(e) => updateField(idx, { type: e.target.value })}
-                                className={`${inputClass} cursor-pointer`}
-                              >
+                              <select value={field.type} onChange={(e) => updateField(idx, { type: e.target.value, options: [] })} className={`${inputClass} cursor-pointer`}>
                                 {FIELD_TYPES.map((t) => (
                                   <option key={t.value} value={t.value}>{t.label}</option>
                                 ))}
@@ -253,17 +274,12 @@ const FormBuilder = () => {
                             </div>
                             <div className="flex items-end pb-1.5">
                               <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-400">
-                                <input
-                                  type="checkbox"
-                                  checked={field.required}
-                                  onChange={(e) => updateField(idx, { required: e.target.checked })}
-                                  className="accent-emerald-500"
-                                />
+                                <input type="checkbox" checked={field.required} onChange={(e) => updateField(idx, { required: e.target.checked })} className="accent-emerald-500" />
                                 Requerido
                               </label>
                             </div>
 
-                            {field.type === 'select' && (
+                            {(field.type === 'select' || field.type === 'multiselect') && (
                               <div className="col-span-2 sm:col-span-4">
                                 <p className="mb-1 text-xs text-slate-500">
                                   Opciones (separadas por coma)
@@ -272,23 +288,17 @@ const FormBuilder = () => {
                                   value={(field.options || []).join(', ')}
                                   onChange={(e) =>
                                     updateField(idx, {
-                                      options: e.target.value
-                                        .split(',')
-                                        .map((s) => s.trim())
-                                        .filter(Boolean),
+                                      options: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
                                     })
                                   }
-                                  placeholder="ej: Opción A, Opción B"
+                                  placeholder="ej: SmartPOS, POS Integrado, Pago con QR"
                                   className={inputClass}
                                 />
                               </div>
                             )}
                           </div>
 
-                          <button
-                            onClick={() => removeField(idx)}
-                            className="mt-5 text-red-400 hover:text-red-300"
-                          >
+                          <button onClick={() => removeField(idx)} className="mt-5 text-red-400 hover:text-red-300">
                             <Trash2 size={15} />
                           </button>
                         </div>
@@ -304,69 +314,31 @@ const FormBuilder = () => {
                   {activeTab === 1 && (
                     <div className="space-y-3">
                       {activityTypes.map((act, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-slate-800/40 p-3"
-                        >
+                        <div key={idx} className="flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-slate-800/40 p-3">
                           <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
                             <div>
                               <p className="mb-1 text-xs text-slate-500">Clave (key)</p>
-                              <input
-                                value={act.key}
-                                onChange={(e) => updateActivity(idx, { key: e.target.value })}
-                                placeholder="ej: CALL"
-                                className={inputClass}
-                              />
+                              <input value={act.key} onChange={(e) => updateActivity(idx, { key: e.target.value })} placeholder="ej: VISIT" className={inputClass} />
                             </div>
                             <div>
                               <p className="mb-1 text-xs text-slate-500">Etiqueta</p>
-                              <input
-                                value={act.label}
-                                onChange={(e) => updateActivity(idx, { label: e.target.value })}
-                                placeholder="ej: Llamada"
-                                className={inputClass}
-                              />
+                              <input value={act.label} onChange={(e) => updateActivity(idx, { label: e.target.value })} placeholder="ej: Visita en terreno" className={inputClass} />
                             </div>
                             <div>
-                              <p className="mb-1 text-xs text-slate-500">Puntos por actividad</p>
-                              <input
-                                type="number"
-                                min={0}
-                                value={act.pointValue}
-                                onChange={(e) =>
-                                  updateActivity(idx, { pointValue: Number(e.target.value) })
-                                }
-                                className={inputClass}
-                              />
+                              <p className="mb-1 text-xs text-slate-500">Puntos</p>
+                              <input type="number" min={0} value={act.pointValue} onChange={(e) => updateActivity(idx, { pointValue: Number(e.target.value) })} className={inputClass} />
                             </div>
                             <div>
                               <p className="mb-1 text-xs text-slate-500">Tope diario</p>
-                              <input
-                                type="number"
-                                min={0}
-                                value={act.dailyCap}
-                                onChange={(e) =>
-                                  updateActivity(idx, { dailyCap: Number(e.target.value) })
-                                }
-                                className={inputClass}
-                              />
+                              <input type="number" min={0} value={act.dailyCap} onChange={(e) => updateActivity(idx, { dailyCap: Number(e.target.value) })} className={inputClass} />
                             </div>
                           </div>
-                          <button
-                            onClick={() => removeActivity(idx)}
-                            className="text-red-400 hover:text-red-300"
-                          >
+                          <button onClick={() => removeActivity(idx)} className="text-red-400 hover:text-red-300">
                             <Trash2 size={15} />
                           </button>
                         </div>
                       ))}
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={addActivity}
-                        className="gap-1.5"
-                      >
+                      <Button variant="outline" size="sm" onClick={addActivity} className="gap-1.5">
                         <Plus size={14} /> Agregar actividad
                       </Button>
                     </div>
@@ -376,77 +348,48 @@ const FormBuilder = () => {
                   {activeTab === 2 && (
                     <div className="space-y-3">
                       {pipelineStages.length === 0 && (
-                        <p className="text-sm text-slate-500 italic">
-                          Sin etapas aún. Agrega la primera.
-                        </p>
+                        <p className="text-sm text-slate-500 italic">Sin etapas aún. Agrega la primera.</p>
                       )}
                       {pipelineStages.map((stage, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-start gap-2 rounded-lg border border-[var(--border-color)] bg-slate-800/40 p-3"
-                        >
+                        <div key={idx} className="flex items-start gap-2 rounded-lg border border-[var(--border-color)] bg-slate-800/40 p-3">
                           <div className="flex flex-col gap-1 pt-5">
-                            <button
-                              onClick={() => moveStage(idx, -1)}
-                              disabled={idx === 0}
-                              className="text-slate-400 hover:text-slate-200 disabled:opacity-25"
-                            >
+                            <button onClick={() => moveStage(idx, -1)} disabled={idx === 0} className="text-slate-400 hover:text-slate-200 disabled:opacity-25">
                               <ChevronUp size={14} />
                             </button>
-                            <button
-                              onClick={() => moveStage(idx, 1)}
-                              disabled={idx === pipelineStages.length - 1}
-                              className="text-slate-400 hover:text-slate-200 disabled:opacity-25"
-                            >
+                            <button onClick={() => moveStage(idx, 1)} disabled={idx === pipelineStages.length - 1} className="text-slate-400 hover:text-slate-200 disabled:opacity-25">
                               <ChevronDown size={14} />
                             </button>
                           </div>
 
-                          <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-3">
+                          <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
                             <div>
                               <p className="mb-1 text-xs text-slate-500">Clave (key)</p>
-                              <input
-                                value={stage.key}
-                                onChange={(e) => updateStage(idx, { key: e.target.value })}
-                                placeholder="ej: NUEVO"
-                                className={inputClass}
-                              />
+                              <input value={stage.key} onChange={(e) => updateStage(idx, { key: e.target.value })} placeholder="ej: VENTA_REALIZADA" className={inputClass} />
                             </div>
                             <div>
                               <p className="mb-1 text-xs text-slate-500">Etiqueta</p>
-                              <input
-                                value={stage.label}
-                                onChange={(e) => updateStage(idx, { label: e.target.value })}
-                                placeholder="ej: Nuevo"
-                                className={inputClass}
-                              />
+                              <input value={stage.label} onChange={(e) => updateStage(idx, { label: e.target.value })} placeholder="ej: Venta realizada" className={inputClass} />
+                            </div>
+                            <div>
+                              <p className="mb-1 text-xs text-slate-500">Tipo de etapa</p>
+                              <select value={stage.stageType || 'open'} onChange={(e) => updateStage(idx, { stageType: e.target.value })} className={`${inputClass} cursor-pointer`}>
+                                {STAGE_TYPES.map((t) => (
+                                  <option key={t.value} value={t.value}>{t.label}</option>
+                                ))}
+                              </select>
                             </div>
                             <div>
                               <p className="mb-1 text-xs text-slate-500">Color</p>
-                              <input
-                                type="color"
-                                value={stage.color || '#6366f1'}
-                                onChange={(e) => updateStage(idx, { color: e.target.value })}
-                                className="h-9 w-full cursor-pointer rounded-md border border-[var(--border-color)] bg-transparent"
-                              />
+                              <input type="color" value={stage.color || '#6366f1'} onChange={(e) => updateStage(idx, { color: e.target.value })} className="h-9 w-full cursor-pointer rounded-md border border-[var(--border-color)] bg-transparent" />
                             </div>
                           </div>
 
-                          <button
-                            onClick={() => removeStage(idx)}
-                            className="mt-5 text-red-400 hover:text-red-300"
-                          >
+                          <button onClick={() => removeStage(idx)} className="mt-5 text-red-400 hover:text-red-300">
                             <Trash2 size={15} />
                           </button>
                         </div>
                       ))}
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={addStage}
-                        className="gap-1.5"
-                      >
+                      <Button variant="outline" size="sm" onClick={addStage} className="gap-1.5">
                         <Plus size={14} /> Agregar etapa
                       </Button>
                     </div>

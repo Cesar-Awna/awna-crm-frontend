@@ -18,6 +18,7 @@ class MetricsErrorBoundary extends Component {
 }
 import Sidebar from '../../../components/Sidebar.jsx';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx';
+import { useBU } from '../../../contexts/BUContext.jsx';
 
 const InfoTip = ({ text }) => (
   <span className="group relative ml-1.5 inline-block cursor-help align-middle">
@@ -29,7 +30,6 @@ const InfoTip = ({ text }) => (
   </span>
 );
 import MetricsService from '../../../services/Metrics.js';
-import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import { LEAD_STATUSES, getStatusLabel } from '../../../lib/leadFormMappers.js';
 
 const STATUS_COLORS = {
@@ -76,22 +76,17 @@ const heatColor = (value, max) => {
 };
 
 const AdminMetrics = () => {
+  const { activeBuId, activeBu, allBus } = useBU();
+
   const [conversion, setConversion]         = useState(null);
   const [summary, setSummary]               = useState(null);
-  const [businessUnits, setBusinessUnits]   = useState([]);
   const [loading, setLoading]               = useState(true);
   const [activityData, setActivityData]     = useState(null);
   const [activityPeriod, setActivityPeriod] = useState('today');
-  const [activityBuId, setActivityBuId]     = useState('');
   const [execReport, setExecReport]         = useState(null);
   const [reportLoading, setReportLoading]   = useState(true);
 
-  useEffect(() => {
-    BusinessUnitsService.getAll()
-      .then((res) => { if (res?.success) setBusinessUnits(res.data || []); })
-      .catch(() => {});
-  }, []);
-
+  // Reload conversion + summary whenever active BU changes
   useEffect(() => {
     const loadMetrics = async () => {
       setLoading(true);
@@ -109,23 +104,25 @@ const AdminMetrics = () => {
       }
     };
     loadMetrics();
-  }, []);
+  }, [activeBuId]);
 
   useEffect(() => {
     const params = { period: activityPeriod };
-    if (activityBuId) params.businessUnitId = activityBuId;
+    if (activeBuId) params.businessUnitId = activeBuId;
     MetricsService.getActivity(params)
       .then((res) => { if (res?.success) setActivityData(res.data); })
       .catch(() => {});
-  }, [activityPeriod, activityBuId]);
+  }, [activityPeriod, activeBuId]);
 
   useEffect(() => {
     setReportLoading(true);
-    MetricsService.getExecutiveReport()
+    const params = {};
+    if (activeBuId) params.businessUnitId = activeBuId;
+    MetricsService.getExecutiveReport(params)
       .then((res) => { if (res?.success) setExecReport(res.data); })
       .catch(() => {})
       .finally(() => setReportLoading(false));
-  }, []);
+  }, [activeBuId]);
 
   const total    = conversion?.total || 0;
   const won      = conversion?.won || 0;
@@ -240,18 +237,11 @@ const AdminMetrics = () => {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <CardTitle>Actividad registrada</CardTitle>
                   <div className="flex flex-wrap items-center gap-2">
-                    <select
-                      className="h-8 rounded-md border border-slate-700 bg-slate-900 px-2 text-xs text-slate-50"
-                      value={activityBuId}
-                      onChange={(e) => setActivityBuId(e.target.value)}
-                    >
-                      <option value="">Todas las unidades</option>
-                      {businessUnits.map((bu) => (
-                        <option key={bu._id} value={bu._id}>
-                          {bu.code} — {bu.name}
-                        </option>
-                      ))}
-                    </select>
+                    {activeBu && (
+                      <span className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-400">
+                        {activeBu.name}
+                      </span>
+                    )}
                     <div className="flex gap-1 rounded-lg bg-slate-800 p-1">
                       {PERIODS.map((p) => (
                         <button
@@ -332,7 +322,7 @@ const AdminMetrics = () => {
                     <p className="text-sm text-slate-400">Tasa de conversión</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-sky-400">{businessUnits.length}</p>
+                    <p className="text-3xl font-bold text-sky-400">{allBus.length}</p>
                     <p className="text-sm text-slate-400">Unidades de negocio</p>
                   </div>
                 </div>

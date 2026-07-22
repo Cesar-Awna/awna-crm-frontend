@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut } from 'lucide-react';
+import { LogOut, Building2 } from 'lucide-react';
 import { Button } from './ui/button.jsx';
 import { getNavItemsForRole } from '../config/navByRole.js';
 import { getStoredRole } from '../lib/session.js';
 import NotificationsService from '../services/Notifications.js';
 import GlobalSearch from './GlobalSearch.jsx';
+import { useBU } from '../contexts/BUContext.jsx';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -20,6 +21,8 @@ const Sidebar = () => {
   const roleName = useMemo(() => getStoredRole(), []);
   const navItems = useMemo(() => getNavItemsForRole(roleName), [roleName]);
   const logoSrc = theme === 'light' ? '/images/logo-dark.webp' : '/images/logo-white.webp';
+  const { activeBuId, setActiveBuId, allBus } = useBU();
+  const isAdmin = roleName === 'COMPANY_ADMIN' || roleName === 'SUPER_ADMIN';
 
   useEffect(() => {
     NotificationsService.getUnread()
@@ -106,6 +109,23 @@ const Sidebar = () => {
           </div>
         </div>
         <GlobalSearch />
+        {isAdmin && allBus.length > 0 && (
+          <div className="mt-4 rounded-lg border border-slate-700/60 bg-slate-800/50 p-3">
+            <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+              <Building2 size={11} />
+              Unidad de negocio
+            </div>
+            <select
+              value={activeBuId}
+              onChange={(e) => setActiveBuId(e.target.value)}
+              className="w-full rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            >
+              {allBus.map((bu) => (
+                <option key={bu._id} value={String(bu._id)}>{bu.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <NavContent />
       </aside>
     </>
