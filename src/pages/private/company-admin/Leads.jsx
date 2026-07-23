@@ -59,7 +59,7 @@ const AdminLeads = () => {
   const [activeBuSchema, setActiveBuSchema] = useState([]);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-  const pagination = usePagination(1, 20);
+  const pagination = usePagination(1, 100);
 
   // Unassigned tab state
   const [unassignedLeads, setUnassignedLeads] = useState([]);
