@@ -37,7 +37,7 @@ const Assignments = () => {
     try {
       const [leadsRes, execsRes] = await Promise.all([
         LeadsService.getUnassigned(),
-        UsersService.getExecutives(),
+        UsersService.getExecutives({ limit: 1000 }),
       ]);
       if (leadsRes?.success) setUnassigned(leadsRes.data || []);
       if (execsRes?.success) setExecutives(execsRes.data || []);
