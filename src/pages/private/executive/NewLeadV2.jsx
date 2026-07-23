@@ -11,6 +11,7 @@ import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import DynamicLeadForm from '../../../components/DynamicLeadForm.jsx';
 import { FloatingAlert } from '../../../components/ui/floating-alert.jsx';
 import { getStoredSession } from '../../../lib/session.js';
+import { useBU } from '../../../contexts/BUContext.jsx';
 import {
   buildLeadPayload,
   mapApiLeadToFormState,
@@ -74,6 +75,7 @@ const EVENT_ICONS = {
 const NewLeadV2 = () => {
   const navigate = useNavigate();
   const { leadId } = useParams();
+  const { activeBuId } = useBU();
   const isEdit = Boolean(leadId);
 
   const [me, setMe] = useState(null);
@@ -137,8 +139,9 @@ const NewLeadV2 = () => {
       }
 
       // 2. BU schema — drives dynamic form fields
+      // activeBuId covers COMPANY_ADMIN (BU switcher); session BU covers executives/supervisors
       const session = getStoredSession();
-      const buId = session?.businessUnitIds?.[0];
+      const buId = session?.businessUnitIds?.[0] || activeBuId;
       let loadedSchema = [];
       if (buId) {
         try {
@@ -181,7 +184,7 @@ const NewLeadV2 = () => {
 
     load().catch(() => {});
     return () => { cancelled = true; };
-  }, [leadId]);
+  }, [leadId, activeBuId]);
 
   const setField = (k, v) => setF((p) => ({ ...p, [k]: v }));
 
