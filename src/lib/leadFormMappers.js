@@ -31,7 +31,8 @@ export const LEAD_STATUSES = [
 export const LEAD_STATUS_VALUES = LEAD_STATUSES.map((s) => s.value);
 
 export const getStatusLabel = (value) =>
-  LEAD_STATUSES.find((s) => s.value === value)?.label || value || '';
+  LEAD_STATUSES.find((s) => s.value === value)?.label ||
+  (value ? value.charAt(0).toUpperCase() + value.slice(1).replace(/_/g, ' ').toLowerCase() : '');
 
 /**
  * Converts an API lead document to a flat form state object.
