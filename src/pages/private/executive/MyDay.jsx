@@ -4,30 +4,22 @@ import Sidebar from '../../../components/Sidebar.jsx';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx';
 import { Button } from '../../../components/ui/button.jsx';
 import LeadsService from '../../../services/Leads.js';
-import { LEAD_STATUSES, getStatusLabel, ACTIVITY_TYPES } from '../../../lib/leadFormMappers.js';
+import { getStatusLabel, getActivityLabel } from '../../../lib/leadFormMappers.js';
+import useBUSchema from '../../../hooks/useBUSchema.js';
 
-const STATUS_COLORS = {
-  NUEVO: '#38bdf8',
-  DATO_ERRADO: '#f87171',
-  CONTACTADO: '#60a5fa',
-  INTERESADO: '#a78bfa',
-  COTIZACION_ENVIADA: '#fbbf24',
-  EN_SEGUIMIENTO: '#f97316',
-  CERRADO_GANADO: '#10b981',
-  CLIENTE: '#059669',
-  CERRADO_PERDIDO: '#ef4444',
+// Fallback color palette — used when a stage/activity key has no color in the schema
+const FALLBACK_STATUS_COLORS = {
+  NUEVO: '#38bdf8', DATO_ERRADO: '#f87171', CONTACTADO: '#60a5fa',
+  INTERESADO: '#a78bfa', COTIZACION_ENVIADA: '#fbbf24', EN_SEGUIMIENTO: '#f97316',
+  CERRADO_GANADO: '#10b981', CLIENTE: '#059669', CERRADO_PERDIDO: '#ef4444',
   NO_INTERESADO: '#fb7185',
 };
 
-const ACTIVITY_COLORS = {
-  CALL: '#38bdf8',
-  CONTACT_SUCCESS: '#10b981',
-  FOLLOWUP: '#60a5fa',
-  WHATSAPP_SENT: '#4ade80',
-  EMAIL_SENT: '#a78bfa',
-  QUOTE_SENT: '#fbbf24',
-  RESCHEDULE: '#f97316',
-  NOTE_ADDED: '#94a3b8',
+const FALLBACK_ACTIVITY_COLORS = {
+  CALL: '#38bdf8', CONTACT_SUCCESS: '#10b981', FOLLOWUP: '#60a5fa',
+  WHATSAPP_SENT: '#4ade80', EMAIL_SENT: '#a78bfa', QUOTE_SENT: '#fbbf24',
+  RESCHEDULE: '#f97316', NOTE_ADDED: '#94a3b8', VISIT: '#8b5cf6',
+  VISIT_ATTENDED: '#06b6d4', CONTACT_SUCCESS2: '#10b981',
 };
 
 const MyDay = () => {
@@ -35,6 +27,19 @@ const MyDay = () => {
   const [data, setData] = useState(null);
   const [followups, setFollowups] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { activityTypes, pipelineStages } = useBUSchema();
+
+  // Build color lookups from BU schema, falling back to hardcoded maps
+  const statusColorMap = pipelineStages.length > 0
+    ? Object.fromEntries(pipelineStages.map((s) => [s.key, s.color || '#94a3b8']))
+    : FALLBACK_STATUS_COLORS;
+
+  const activityColorMap = activityTypes.length > 0
+    ? { ...FALLBACK_ACTIVITY_COLORS, ...Object.fromEntries(activityTypes.map((a, i) => {
+        const palette = ['#38bdf8','#10b981','#60a5fa','#4ade80','#a78bfa','#fbbf24','#f97316','#94a3b8','#8b5cf6','#06b6d4'];
+        return [a.key, palette[i % palette.length]];
+      })) }
+    : FALLBACK_ACTIVITY_COLORS;
 
   useEffect(() => {
     const loadData = async () => {
@@ -198,7 +203,7 @@ const MyDay = () => {
                           title={`${getStatusLabel(key) || key}: ${count}`}
                           style={{
                             width: `${(count / totalLeads) * 100}%`,
-                            backgroundColor: STATUS_COLORS[key] || '#94a3b8',
+                            backgroundColor: statusColorMap[key] || '#94a3b8',
                           }}
                         />
                       );
@@ -215,7 +220,7 @@ const MyDay = () => {
                       <div className="flex items-center gap-2">
                         <span
                           className="h-2 w-2 flex-shrink-0 rounded-full"
-                          style={{ backgroundColor: STATUS_COLORS[key] || '#94a3b8' }}
+                          style={{ backgroundColor: statusColorMap[key] || '#94a3b8' }}
                         />
                         <span className="text-xs text-slate-400">{getStatusLabel(key) || key}</span>
                       </div>
@@ -236,8 +241,8 @@ const MyDay = () => {
               <CardContent>
                 <div className="space-y-3">
                   {Object.entries(byActivity).map(([key, count]) => {
-                    const label = ACTIVITY_TYPES.find((a) => a.value === key)?.label || key;
-                    const color = ACTIVITY_COLORS[key] || '#94a3b8';
+                    const label = getActivityLabel(key, activityTypes);
+                    const color = activityColorMap[key] || '#94a3b8';
                     const pct   = Math.round((count / maxActivity) * 100);
                     return (
                       <div key={key} className="flex items-center gap-3">

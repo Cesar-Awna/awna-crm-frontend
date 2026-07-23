@@ -12,8 +12,21 @@ export const ACTIVITY_TYPES = [
   { value: 'NOTE_ADDED',      label: 'Nota' },
 ];
 
-export const getActivityLabel = (value) =>
-  ACTIVITY_TYPES.find((a) => a.value === value)?.label || value || '';
+/**
+ * Resolves a human-readable label for an activity key.
+ * @param {string} value - The activity key (e.g. 'CALL', 'VISIT_ATTENDED')
+ * @param {Array}  dynamicTypes - Optional BU activityTypes from useBUSchema().
+ *                 When provided, checked first (enables Getnet / future BUs).
+ *                 All existing callers with one argument continue to work.
+ */
+export const getActivityLabel = (value, dynamicTypes = []) => {
+  if (dynamicTypes.length > 0) {
+    const dyn = dynamicTypes.find((a) => a.key === value);
+    if (dyn) return dyn.label;
+  }
+  return ACTIVITY_TYPES.find((a) => a.value === value)?.label ||
+    (value ? value.charAt(0).toUpperCase() + value.slice(1).replace(/_/g, ' ').toLowerCase() : '');
+};
 
 export const LEAD_STATUSES = [
   { value: 'NUEVO',              label: 'Nuevo' },
