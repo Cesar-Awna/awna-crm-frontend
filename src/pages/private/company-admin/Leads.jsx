@@ -12,6 +12,7 @@ import { exportCSV } from '../../../utils/exportCSV.js';
 import { usePagination } from '../../../hooks/usePagination.js';
 import PaginationControls from '../../../components/PaginationControls.jsx';
 import LeadImportModal from '../../../components/LeadImportModal.jsx';
+import { useBU } from '../../../contexts/BUContext.jsx';
 
 const getLeadField = (lead, key) => lead?.fields?.[key] ?? lead?.[key] ?? '—';
 
@@ -30,6 +31,7 @@ const STATUS_BADGE = {
 
 const AdminLeads = () => {
   const navigate = useNavigate();
+  const { activeBuId } = useBU();
   const [activeTab, setActiveTab] = useState('leads');
   const [leads, setLeads] = useState([]);
   const [loadingLeads, setLoadingLeads] = useState(true);
@@ -86,7 +88,7 @@ const AdminLeads = () => {
       }
     };
     loadData();
-  }, []);
+  }, [activeBuId]);
 
   useEffect(() => {
     pagination.reset();
