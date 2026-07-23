@@ -47,6 +47,7 @@ const Leads = () => {
   const [search, setSearch] = useState('');
   const [buSchema, setBuSchema] = useState([]);
   const [pipelineStages, setPipelineStages] = useState([]);
+  const [productField, setProductField] = useState(null); // { key, options[] }
   const [leadStats, setLeadStats] = useState({ openCount: 0, wonCount: 0, lostCount: 0, invalidCount: 0 });
   const [loadError, setLoadError] = useState('');
 
@@ -58,8 +59,16 @@ const Leads = () => {
       try {
         const res = await BusinessUnitsService.getSchema(buId);
         if (res?.success && res.data) {
-          setBuSchema(res.data.leadSchema || []);
+          const schema = res.data.leadSchema || [];
+          setBuSchema(schema);
           setPipelineStages(res.data.pipelineStages || []);
+          // Find the field used to track product — key may vary by BU
+          const pf = schema.find(
+            (f) => (f.type === 'select' || f.type === 'multiselect') &&
+                   (f.key === 'productoCotizado' || f.key === 'productosInteres' ||
+                    f.key.toLowerCase().includes('product'))
+          );
+          setProductField(pf ? { key: pf.key, options: pf.options || [] } : null);
         }
       } catch {
         // fallback to defaults
@@ -123,7 +132,11 @@ const Leads = () => {
 
   const filteredLeads = leads.filter((l) => {
     if (filterFuente && (l.fields?.fuenteLead ?? '') !== filterFuente) return false;
-    if (filterProducto && (l.fields?.productoCotizado ?? '') !== filterProducto) return false;
+    if (filterProducto && productField) {
+      const val = l.fields?.[productField.key];
+      const match = Array.isArray(val) ? val.includes(filterProducto) : val === filterProducto;
+      if (!match) return false;
+    }
     if (!search) return true;
     const q = search.toLowerCase();
     if ((l.razonSocial || '').toLowerCase().includes(q)) return true;
@@ -294,16 +307,18 @@ const Leads = () => {
             ))}
           </select>
 
-          <select
-            value={filterProducto}
-            onChange={(e) => setFilterProducto(e.target.value)}
-            className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
-          >
-            <option value="">Todos los productos</option>
-            {['Mora Control', 'Reporte Interactivo'].map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </select>
+          {productField && productField.options.length > 0 && (
+            <select
+              value={filterProducto}
+              onChange={(e) => setFilterProducto(e.target.value)}
+              className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
+            >
+              <option value="">Todos los productos</option>
+              {productField.options.map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          )}
 
           <input
             type="search"
