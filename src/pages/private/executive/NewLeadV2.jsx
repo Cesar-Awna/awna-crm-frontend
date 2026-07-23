@@ -84,6 +84,7 @@ const NewLeadV2 = () => {
 
   const [schema, setSchema] = useState([]);
   const [buActivityTypes, setBuActivityTypes] = useState([]);
+  const [buPipelineStages, setBuPipelineStages] = useState([]);
   const [schemaLoading, setSchemaLoading] = useState(true);
 
   const [events, setEvents] = useState([]);
@@ -145,6 +146,7 @@ const NewLeadV2 = () => {
             loadedSchema = schemaRes.data.leadSchema || [];
             setSchema(loadedSchema);
             setBuActivityTypes(schemaRes.data.activityTypes || []);
+            setBuPipelineStages(schemaRes.data.pipelineStages || []);
           }
         } catch {
           // falls back to legacy hardcoded form
@@ -314,7 +316,10 @@ const NewLeadV2 = () => {
         value={f.status}
         onChange={(e) => setField('status', e.target.value)}
       >
-        {LEAD_STATUSES.map((s) => (
+        {(buPipelineStages.length > 0
+          ? buPipelineStages.map((s) => ({ value: s.key, label: s.label }))
+          : LEAD_STATUSES
+        ).map((s) => (
           <option key={s.value} value={s.value}>{s.label}</option>
         ))}
       </select>
