@@ -15,6 +15,7 @@ import {
   buildLeadPayload,
   mapApiLeadToFormState,
   LEAD_STATUSES,
+  LEAD_STATUS_VALUES,
   NEXT_ACTION_TYPES,
   ACTIVITY_TYPES,
   getActivityLabel,
@@ -316,9 +317,17 @@ const NewLeadV2 = () => {
         value={f.status}
         onChange={(e) => setField('status', e.target.value)}
       >
-        {(buPipelineStages.length > 0
-          ? buPipelineStages.map((s) => ({ value: s.key, label: s.label }))
-          : LEAD_STATUSES
+        {(
+          // Use dynamic stages only when the BU has stages NOT in the legacy list
+          // (i.e. Getnet, future BUs). Equifax stages are a subset of LEAD_STATUSES
+          // so it keeps using the hardcoded order — no visible change for Equifax.
+          buPipelineStages.length > 0 &&
+          buPipelineStages.some((s) => !LEAD_STATUS_VALUES.includes(s.key))
+            ? buPipelineStages
+                .slice()
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                .map((s) => ({ value: s.key, label: s.label }))
+            : LEAD_STATUSES
         ).map((s) => (
           <option key={s.value} value={s.value}>{s.label}</option>
         ))}
