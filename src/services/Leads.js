@@ -20,6 +20,7 @@ class LeadsService {
   logActivityWithFile = (id, formData) => instance.post(`/api/leads/${id}/log-activity-with-file`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+  dismissFollowup = (id) => instance.patch(`/api/leads/${id}/dismiss-followup`);
   getEvents = (id) => instance.get(`/api/leads/${id}/events`);
   deleteLead = (id) => instance.delete(`/api/leads/${id}`);
 }

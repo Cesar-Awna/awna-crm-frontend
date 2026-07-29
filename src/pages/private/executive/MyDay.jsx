@@ -27,6 +27,7 @@ const MyDay = () => {
   const [data, setData] = useState(null);
   const [followups, setFollowups] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dismissing, setDismissing] = useState(null);
   const { activityTypes, pipelineStages } = useBUSchema();
 
   // Build color lookups from BU schema, falling back to hardcoded maps
@@ -71,6 +72,22 @@ const MyDay = () => {
   const statusEntries = Object.entries(byStatus);
   const totalLeads    = Object.values(byStatus).reduce((s, n) => s + n, 0);
   const maxActivity   = Math.max(...Object.values(byActivity), 1);
+
+  const dismissFollowup = async (e, leadId) => {
+    e.stopPropagation();
+    setDismissing(leadId);
+    try {
+      await LeadsService.dismissFollowup(leadId);
+      setFollowups((prev) => ({
+        today:   (prev?.today   || []).filter((l) => l._id !== leadId),
+        overdue: (prev?.overdue || []).filter((l) => l._id !== leadId),
+      }));
+    } catch (err) {
+      console.error('Error dismissing followup:', err);
+    } finally {
+      setDismissing(null);
+    }
+  };
 
   const today = new Date().toLocaleDateString('es-CL', {
     weekday: 'long', day: 'numeric', month: 'long',
@@ -139,9 +156,18 @@ const MyDay = () => {
                             {lead.contactPhone || lead.fields?.Telefono || lead.fields?.telefono || '—'}
                           </p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-xs font-semibold text-emerald-300">{lead.nextActionType || '—'}</p>
-                          <p className="text-xs text-slate-500">Hoy</p>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <p className="text-xs font-semibold text-emerald-300">{lead.nextActionType || '—'}</p>
+                            <p className="text-xs text-slate-500">Hoy</p>
+                          </div>
+                          <button
+                            onClick={(e) => dismissFollowup(e, lead._id)}
+                            disabled={dismissing === lead._id}
+                            className="ml-1 rounded-md bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 transition"
+                          >
+                            {dismissing === lead._id ? '…' : 'Listo'}
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -174,9 +200,18 @@ const MyDay = () => {
                               {lead.contactPhone || lead.fields?.Telefono || lead.fields?.telefono || '—'}
                             </p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-xs font-semibold text-orange-300">{lead.nextActionType || '—'}</p>
-                            <p className="text-xs text-orange-400 font-semibold">{daysOverdue}d atrás</p>
+                          <div className="flex items-center gap-2">
+                            <div className="text-right">
+                              <p className="text-xs font-semibold text-orange-300">{lead.nextActionType || '—'}</p>
+                              <p className="text-xs text-orange-400 font-semibold">{daysOverdue}d atrás</p>
+                            </div>
+                            <button
+                              onClick={(e) => dismissFollowup(e, lead._id)}
+                              disabled={dismissing === lead._id}
+                              className="ml-1 rounded-md bg-orange-600 px-2 py-1 text-xs font-semibold text-white hover:bg-orange-500 disabled:opacity-50 transition"
+                            >
+                              {dismissing === lead._id ? '…' : 'Listo'}
+                            </button>
                           </div>
                         </div>
                       );

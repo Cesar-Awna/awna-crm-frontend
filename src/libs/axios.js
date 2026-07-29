@@ -6,6 +6,7 @@ const createInstance = (baseURL) => {
     baseURL,
   });
 
+  // ── Request: attach token + BU header ────────────────────────────────────
   instance.interceptors.request.use(
     (config) => {
       try {
@@ -21,13 +22,11 @@ const createInstance = (baseURL) => {
             config.headers.Authorization = `Bearer ${token}`;
           }
 
-          // Send business unit ID for executives/supervisors
           const businessUnitIds = session?.businessUnitIds || stored?.businessUnitIds;
           if (Array.isArray(businessUnitIds) && businessUnitIds.length > 0) {
             config.headers['x-business-unit-id'] = businessUnitIds[0];
           }
 
-          // COMPANY_ADMIN has empty businessUnitIds — use the BU switcher selection
           if (!config.headers['x-business-unit-id']) {
             const activeBuId = localStorage.getItem('activeBuId');
             if (activeBuId) config.headers['x-business-unit-id'] = activeBuId;
@@ -41,10 +40,90 @@ const createInstance = (baseURL) => {
     (error) => Promise.reject(error)
   );
 
+  // ── Response: auto-refresh on 401 ────────────────────────────────────────
+  let isRefreshing = false;
+  let failedQueue = [];
+
+  const processQueue = (error, token = null) => {
+    failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token)));
+    failedQueue = [];
+  };
+
+  const redirectToLogin = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('activeBuId');
+    window.location.href = '/login';
+  };
+
   instance.interceptors.response.use(
     (res) => res.data,
     (error) => {
-      throw error;
+      const originalRequest = error.config;
+
+      // Only handle 401; skip if already retried or if this is the refresh call itself
+      if (
+        error.response?.status !== 401 ||
+        originalRequest._retry ||
+        originalRequest.url?.includes('/api/auth/refresh')
+      ) {
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        // Queue this request until refresh completes
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return instance(originalRequest);
+        }).catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      return new Promise((resolve, reject) => {
+        try {
+          const raw = localStorage.getItem('user');
+          if (!raw) { redirectToLogin(); return reject(error); }
+
+          const stored = JSON.parse(raw);
+          const refreshToken =
+            stored?.data?.refreshToken ||
+            stored?.refreshToken ||
+            stored?.data?.session?.refreshToken;
+
+          if (!refreshToken) { redirectToLogin(); return reject(error); }
+
+          axios
+            .post(`${baseURL}/api/auth/refresh`, { refreshToken })
+            .then((res) => {
+              const newToken = res.data?.data?.accessToken;
+              if (!newToken) throw new Error('No token in refresh response');
+
+              // Update stored token
+              if (stored.data) stored.data.accessToken = newToken;
+              else stored.accessToken = newToken;
+              localStorage.setItem('user', JSON.stringify(stored));
+
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              processQueue(null, newToken);
+              resolve(instance(originalRequest));
+            })
+            .catch((refreshErr) => {
+              processQueue(refreshErr, null);
+              redirectToLogin();
+              reject(refreshErr);
+            })
+            .finally(() => {
+              isRefreshing = false;
+            });
+        } catch {
+          isRefreshing = false;
+          redirectToLogin();
+          reject(error);
+        }
+      });
     }
   );
 
@@ -52,5 +131,3 @@ const createInstance = (baseURL) => {
 };
 
 export default createInstance;
-
-
