@@ -84,7 +84,7 @@ const Leads = () => {
       try {
         const listParams = {
           status: filterStatus || undefined,
-          limit: 100,
+          limit: 1000,
           page: 1,
         };
         const [leadsRes, statsRes] = await Promise.all([
