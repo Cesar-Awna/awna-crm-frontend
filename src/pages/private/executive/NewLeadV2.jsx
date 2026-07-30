@@ -680,14 +680,30 @@ const NewLeadV2 = () => {
                                 <p className="mt-0.5 text-xs text-[var(--muted-fg)]">{ev.metadata.note}</p>
                               )}
                               {ev.metadata?.signedUrl && (
-                                <a
-                                  href={ev.metadata.signedUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300"
-                                >
-                                  📎 {ev.metadata.attachmentName || 'Ver adjunto'}
-                                </a>
+                                <div className="mt-2">
+                                  <a
+                                    href={ev.metadata.signedUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group inline-block"
+                                  >
+                                    {ev.metadata.thumbnailUrl ? (
+                                      <img
+                                        src={ev.metadata.thumbnailUrl}
+                                        alt="preview"
+                                        className="mb-1 h-24 w-20 rounded border border-(--input-border) object-cover shadow transition group-hover:opacity-80"
+                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                      />
+                                    ) : (
+                                      <div className="mb-1 flex h-24 w-20 items-center justify-center rounded border border-(--input-border) bg-(--input-bg) text-3xl">
+                                        📄
+                                      </div>
+                                    )}
+                                    <p className="max-w-40 truncate text-xs text-emerald-400 group-hover:text-emerald-300">
+                                      {ev.metadata.attachmentName || 'Ver cotización'}
+                                    </p>
+                                  </a>
+                                </div>
                               )}
                               <p className="mt-1 text-xs text-[var(--muted-fg)]">
                                 {new Date(ev.eventAt).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })}
