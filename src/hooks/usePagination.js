@@ -16,8 +16,6 @@ export const usePagination = (initialPage = 1, initialLimit = 20) => {
 
   const updatePaginationData = useCallback((pagination) => {
     if (pagination) {
-      setCurrentPage(pagination.currentPage || 1);
-      setLimit(pagination.limit || 20);
       setTotalPages(pagination.totalPages || 0);
       setTotalDocs(pagination.totalDocs || 0);
       setHasNextPage(pagination.hasNextPage || false);
