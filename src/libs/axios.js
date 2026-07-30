@@ -23,11 +23,14 @@ const createInstance = (baseURL) => {
           }
 
           const businessUnitIds = session?.businessUnitIds || stored?.businessUnitIds;
-          if (Array.isArray(businessUnitIds) && businessUnitIds.length > 0) {
+          // Only auto-set header when user has exactly one BU.
+          // Multi-BU supervisors omit the header so the backend resolves scope
+          // using { $in: [...all their BUs] } automatically.
+          if (Array.isArray(businessUnitIds) && businessUnitIds.length === 1) {
             config.headers['x-business-unit-id'] = businessUnitIds[0];
           }
 
-          if (!config.headers['x-business-unit-id']) {
+          if (!config.headers['x-business-unit-id'] && Array.isArray(businessUnitIds) && businessUnitIds.length <= 1) {
             const activeBuId = localStorage.getItem('activeBuId');
             if (activeBuId) config.headers['x-business-unit-id'] = activeBuId;
           }
