@@ -314,7 +314,7 @@ const NewLeadV2 = () => {
 
   const statusSelect = (
     <div>
-      <label className="mb-1 block text-sm text-[var(--muted-fg)]">Estado</label>
+      <label className="mb-1 block text-sm text-(--muted-fg)">Estado</label>
       <select
         className="h-10 w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 text-sm text-[var(--input-fg)]"
         value={f.status}
@@ -358,29 +358,29 @@ const NewLeadV2 = () => {
           <>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-sm text-[var(--muted-fg)]">Razón Social *</label>
+                <label className="mb-1 block text-sm text-(--muted-fg)">Razón Social *</label>
                 <Input value={f.razonSocial || ''} onChange={(e) => setField('razonSocial', e.target.value)} placeholder="Empresa S.A." />
               </div>
               <div>
-                <label className="mb-1 block text-sm text-[var(--muted-fg)]">RUT Empresa *</label>
+                <label className="mb-1 block text-sm text-(--muted-fg)">RUT Empresa *</label>
                 <Input value={f.rutEmpresa || ''} onChange={(e) => setField('rutEmpresa', e.target.value)} placeholder="76.123.456-7" />
               </div>
               <div>
-                <label className="mb-1 block text-sm text-[var(--muted-fg)]">Nombre del Contacto *</label>
+                <label className="mb-1 block text-sm text-(--muted-fg)">Nombre del Contacto *</label>
                 <Input value={f.contactName || ''} onChange={(e) => setField('contactName', e.target.value)} placeholder="Juan Pérez" />
               </div>
               <div>
-                <label className="mb-1 block text-sm text-[var(--muted-fg)]">Correo</label>
+                <label className="mb-1 block text-sm text-(--muted-fg)">Correo</label>
                 <Input type="email" value={f.contactEmail || ''} onChange={(e) => setField('contactEmail', e.target.value)} placeholder="contacto@empresa.cl" />
               </div>
               <div>
-                <label className="mb-1 block text-sm text-[var(--muted-fg)]">Teléfono</label>
+                <label className="mb-1 block text-sm text-(--muted-fg)">Teléfono</label>
                 <Input value={f.contactPhone || ''} onChange={(e) => setField('contactPhone', e.target.value)} placeholder="+56 9 1234 5678" />
               </div>
               {statusSelect}
             </div>
             <div>
-              <label className="mb-1 block text-sm text-[var(--muted-fg)]">Observación</label>
+              <label className="mb-1 block text-sm text-(--muted-fg)">Observación</label>
               <textarea
                 className="min-h-[80px] w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] p-3 text-sm text-[var(--input-fg)]"
                 value={f.observation || ''}
@@ -392,7 +392,7 @@ const NewLeadV2 = () => {
         )}
 
         {!isEdit && (
-          <p className="text-xs text-[var(--muted-fg)]">
+          <p className="text-xs text-(--muted-fg)">
             La fecha de ingreso se registra automáticamente al crear el lead.
           </p>
         )}
@@ -407,7 +407,7 @@ const NewLeadV2 = () => {
 
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <Button type="button" variant="ghost" onClick={() => navigate('/leads')} className="mb-2 px-0 text-sm text-[var(--muted-fg)]">
+            <Button type="button" variant="ghost" onClick={() => navigate('/leads')} className="mb-2 px-0 text-sm text-(--muted-fg)">
               ← Volver
             </Button>
             <h1 className="text-2xl font-semibold tracking-tight">
@@ -498,11 +498,11 @@ const NewLeadV2 = () => {
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="mb-1 block text-sm text-[var(--muted-fg)]">Fecha de próximo contacto</label>
+                      <label className="mb-1 block text-sm text-(--muted-fg)">Fecha de próximo contacto</label>
                       <Input type="date" value={f.nextContactDate} onChange={(e) => setField('nextContactDate', e.target.value)} />
                     </div>
                     <div>
-                      <label className="mb-1 block text-sm text-[var(--muted-fg)]">Tipo de próxima acción</label>
+                      <label className="mb-1 block text-sm text-(--muted-fg)">Tipo de próxima acción</label>
                       <select
                         className="h-10 w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 text-sm text-[var(--input-fg)]"
                         value={f.nextActionType}
@@ -515,14 +515,14 @@ const NewLeadV2 = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="mb-1 block text-sm text-[var(--muted-fg)]">Fecha de cierre</label>
+                      <label className="mb-1 block text-sm text-(--muted-fg)">Fecha de cierre</label>
                       <Input
                         type="date"
                         value={f.closedAt || ''}
                         onChange={(e) => setField('closedAt', e.target.value)}
                         placeholder="Se registra automáticamente al cerrar"
                       />
-                      <p className="mt-1 text-xs text-[var(--muted-fg)]">Se establece automáticamente al cambiar a estado ganado o perdido.</p>
+                      <p className="mt-1 text-xs text-(--muted-fg)">Se establece automáticamente al cambiar a estado ganado o perdido.</p>
                     </div>
                   </div>
                 </CardContent>
@@ -535,7 +535,7 @@ const NewLeadV2 = () => {
                     {buActivityTypes.length > 0
                       ? buActivityTypes.filter((a) => a.key !== 'NOTE_ADDED').map(({ key, label }) => (
                           <div key={key}>
-                            <label className="mb-1 block text-sm text-[var(--muted-fg)]">{label}</label>
+                            <label className="mb-1 block text-sm text-(--muted-fg)">{label}</label>
                             <Input
                               type="number"
                               min="0"
@@ -557,7 +557,7 @@ const NewLeadV2 = () => {
                           { key: 'rescheduleCount',      label: 'Reagendamientos'       },
                         ].map(({ key, label }) => (
                           <div key={key}>
-                            <label className="mb-1 block text-sm text-[var(--muted-fg)]">{label}</label>
+                            <label className="mb-1 block text-sm text-(--muted-fg)">{label}</label>
                             <Input
                               type="number"
                               min="0"
@@ -585,7 +585,7 @@ const NewLeadV2 = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <textarea
-                      className="min-h-[90px] w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] p-3 text-sm text-[var(--input-fg)] placeholder:text-[var(--muted-fg)]"
+                      className="min-h-[90px] w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] p-3 text-sm text-[var(--input-fg)] placeholder:text-(--muted-fg)"
                       placeholder="Escribe lo que ocurrió…"
                       value={hitoText}
                       onChange={(e) => setHitoText(e.target.value)}
@@ -597,11 +597,11 @@ const NewLeadV2 = () => {
                     </div>
                   </div>
                   {eventsLoading ? (
-                    <p className="text-xs text-[var(--muted-fg)]">Cargando hitos…</p>
+                    <p className="text-xs text-(--muted-fg)">Cargando hitos…</p>
                   ) : (
                     <div className="max-h-80 space-y-0 overflow-y-auto">
                       {events.filter((ev) => ev.eventType === 'NOTE_ADDED').length === 0 ? (
-                        <p className="text-xs text-[var(--muted-fg)]">Sin hitos registrados aún.</p>
+                        <p className="text-xs text-(--muted-fg)">Sin hitos registrados aún.</p>
                       ) : (
                         events.filter((ev) => ev.eventType === 'NOTE_ADDED').map((ev, idx, arr) => (
                           <div key={ev._id} className="flex gap-3">
@@ -611,7 +611,7 @@ const NewLeadV2 = () => {
                             </div>
                             <div className="min-w-0 flex-1 pb-4">
                               <p className="text-sm leading-snug text-[var(--app-fg)]">{ev.metadata?.note}</p>
-                              <p className="mt-1 text-xs text-[var(--muted-fg)]">
+                              <p className="mt-1 text-xs text-(--muted-fg)">
                                 {new Date(ev.eventAt).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })}
                               </p>
                             </div>
@@ -651,7 +651,7 @@ const NewLeadV2 = () => {
                   </div>
                   {activityType === 'QUOTE_SENT' && (
                     <div className="rounded-md border border-dashed border-[var(--input-border)] bg-[var(--input-bg)] p-3">
-                      <label className="mb-1 block text-xs text-[var(--muted-fg)]">Adjuntar cotización (PDF)</label>
+                      <label className="mb-1 block text-xs text-(--muted-fg)">Adjuntar cotización (PDF)</label>
                       <input
                         type="file"
                         accept=".pdf"
@@ -664,11 +664,11 @@ const NewLeadV2 = () => {
                     </div>
                   )}
                   <div>
-                    <p className="mb-2 text-xs font-medium uppercase text-[var(--muted-fg)]">Historial</p>
+                    <p className="mb-2 text-xs font-medium uppercase text-(--muted-fg)">Historial</p>
                     {eventsLoading ? (
-                      <p className="text-xs text-[var(--muted-fg)]">Cargando historial…</p>
+                      <p className="text-xs text-(--muted-fg)">Cargando historial…</p>
                     ) : events.filter((ev) => ev.eventType !== 'NOTE_ADDED').length === 0 ? (
-                      <p className="text-xs text-[var(--muted-fg)]">Sin actividad registrada aún.</p>
+                      <p className="text-xs text-(--muted-fg)">Sin actividad registrada aún.</p>
                     ) : (
                       <div className="max-h-80 space-y-2 overflow-y-auto">
                         {events.filter((ev) => ev.eventType !== 'NOTE_ADDED').map((ev) => (
@@ -677,35 +677,43 @@ const NewLeadV2 = () => {
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium">{getActivityLabel(ev.eventType)}</p>
                               {ev.metadata?.note && (
-                                <p className="mt-0.5 text-xs text-[var(--muted-fg)]">{ev.metadata.note}</p>
+                                <p className="mt-0.5 text-xs text-(--muted-fg)">{ev.metadata.note}</p>
                               )}
-                              {ev.metadata?.signedUrl && (
-                                <div className="mt-2">
-                                  <a
-                                    href={ev.metadata.signedUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="group inline-block"
-                                  >
-                                    {ev.metadata.thumbnailUrl ? (
-                                      <img
-                                        src={ev.metadata.thumbnailUrl}
-                                        alt="preview"
-                                        className="mb-1 h-24 w-20 rounded border border-(--input-border) object-cover shadow transition group-hover:opacity-80"
-                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                      />
-                                    ) : (
-                                      <div className="mb-1 flex h-24 w-20 items-center justify-center rounded border border-(--input-border) bg-(--input-bg) text-3xl">
-                                        📄
-                                      </div>
-                                    )}
-                                    <p className="max-w-40 truncate text-xs text-emerald-400 group-hover:text-emerald-300">
-                                      {ev.metadata.attachmentName || 'Ver cotización'}
-                                    </p>
-                                  </a>
-                                </div>
-                              )}
-                              <p className="mt-1 text-xs text-[var(--muted-fg)]">
+                              {(ev.metadata?.signedUrl || ev.metadata?.fileUrl) && (() => {
+                                const attachUrl = ev.metadata.signedUrl || ev.metadata.fileUrl;
+                                const attachName = ev.metadata.attachmentName
+                                  || ev.metadata.fileName
+                                  || (ev.metadata.filePublicId?.split('/').pop()?.replace(/^\d+_/, '').replace(/_/g, ' '))
+                                  || 'Ver cotización';
+                                const thumbUrl = ev.metadata.thumbnailUrl;
+                                return (
+                                  <div className="mt-2">
+                                    <a
+                                      href={attachUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="group inline-block"
+                                    >
+                                      {thumbUrl ? (
+                                        <img
+                                          src={thumbUrl}
+                                          alt="preview"
+                                          className="mb-1 h-24 w-20 rounded border border-(--input-border) object-cover shadow transition group-hover:opacity-80"
+                                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                        />
+                                      ) : (
+                                        <div className="mb-1 flex h-24 w-20 items-center justify-center rounded border border-(--input-border) bg-(--input-bg) text-3xl">
+                                          📄
+                                        </div>
+                                      )}
+                                      <p className="max-w-40 truncate text-xs text-emerald-400 group-hover:text-emerald-300">
+                                        {attachName}
+                                      </p>
+                                    </a>
+                                  </div>
+                                );
+                              })()}
+                              <p className="mt-1 text-xs text-(--muted-fg)">
                                 {new Date(ev.eventAt).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })}
                               </p>
                             </div>
