@@ -14,7 +14,21 @@ import PaginationControls from '../../../components/PaginationControls.jsx';
 import LeadImportModal from '../../../components/LeadImportModal.jsx';
 import { useBU } from '../../../contexts/BUContext.jsx';
 
-const getLeadField = (lead, key) => lead?.fields?.[key] ?? lead?.[key] ?? '—';
+const FIELD_ALIASES = {
+  rutEmpresa:     ['rut'],
+  nombreContacto: ['nombre', 'contactName'],
+  razonSocial:    ['nombreEmpresa', 'empresa'],
+  telefono:       ['contactPhone', 'celular'],
+};
+const getLeadField = (lead, key) => {
+  const direct = lead?.fields?.[key] ?? lead?.[key];
+  if (direct !== undefined && direct !== null && direct !== '') return direct;
+  for (const alias of (FIELD_ALIASES[key] || [])) {
+    const v = lead?.fields?.[alias] ?? lead?.[alias];
+    if (v !== undefined && v !== null && v !== '') return v;
+  }
+  return '—';
+};
 
 const STATUS_BADGE = {
   NUEVO: 'bg-sky-500/20 text-sky-300',
@@ -95,7 +109,7 @@ const AdminLeads = () => {
   }, [leadFilters.businessUnitId, leadFilters.ownerUserId, leadFilters.status]);
 
   useEffect(() => {
-    const buId = leadFilters.businessUnitId || businessUnits[0]?._id;
+    const buId = leadFilters.businessUnitId;
     if (!buId) {
       setActiveBuSchema([]);
       return;
