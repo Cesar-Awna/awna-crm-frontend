@@ -160,10 +160,13 @@ const AdminLeads = () => {
         const statsParams = {};
         if (leadFilters.businessUnitId) statsParams.businessUnitId = leadFilters.businessUnitId;
 
-        const [leadsRes, statsRes] = await Promise.all([
+        const [leadsResult, statsResult] = await Promise.allSettled([
           LeadsService.getAll(params),
           LeadsService.getStats(statsParams),
         ]);
+
+        const leadsRes = leadsResult.status === 'fulfilled' ? leadsResult.value : null;
+        const statsRes = statsResult.status === 'fulfilled' ? statsResult.value : null;
 
         if (leadsRes?.success && Array.isArray(leadsRes.data)) {
           setLeads(leadsRes.data);
