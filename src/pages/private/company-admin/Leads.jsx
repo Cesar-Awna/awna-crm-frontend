@@ -71,6 +71,7 @@ const AdminLeads = () => {
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState(null);
   const [activeBuSchema, setActiveBuSchema] = useState([]);
+  const [activeBuStages, setActiveBuStages] = useState([]);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const pagination = usePagination(1, 100);
@@ -120,14 +121,20 @@ const AdminLeads = () => {
     const buId = leadFilters.businessUnitId;
     if (!buId) {
       setActiveBuSchema([]);
+      setActiveBuStages([]);
       return;
     }
     BusinessUnitsService.getSchema(buId)
       .then((res) => {
-        if (res?.success && res.data) setActiveBuSchema(res.data.leadSchema || []);
-        else setActiveBuSchema([]);
+        if (res?.success && res.data) {
+          setActiveBuSchema(res.data.leadSchema || []);
+          setActiveBuStages(res.data.pipelineStages || []);
+        } else {
+          setActiveBuSchema([]);
+          setActiveBuStages([]);
+        }
       })
-      .catch(() => setActiveBuSchema([]));
+      .catch(() => { setActiveBuSchema([]); setActiveBuStages([]); });
   }, [leadFilters.businessUnitId, businessUnits]);
 
   useEffect(() => {
@@ -713,8 +720,8 @@ const AdminLeads = () => {
                 onChange={(e) => setLeadFilters((f) => ({ ...f, status: e.target.value }))}
               >
                 <option value="">Todos los estados</option>
-                {LEAD_STATUSES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
+                {(activeBuStages.length > 0 ? activeBuStages : LEAD_STATUSES.map(s => ({ key: s.value, label: s.label }))).map((s) => (
+                  <option key={s.key ?? s.value} value={s.key ?? s.value}>{s.label}</option>
                 ))}
               </select>
               <select
