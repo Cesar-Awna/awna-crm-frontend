@@ -104,9 +104,17 @@ const AdminLeads = () => {
     loadData();
   }, [activeBuId]);
 
+  // Reset to page 1 whenever any filter changes (not when navigating pages)
   useEffect(() => {
-    pagination.reset();
-  }, [leadFilters.businessUnitId, leadFilters.ownerUserId, leadFilters.status]);
+    pagination.resetPage();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    leadFilters.businessUnitId, leadFilters.ownerUserId, leadFilters.status,
+    leadFilters.fuenteLead, leadFilters.productoCotizado,
+    leadFilters.createdAtFrom, leadFilters.createdAtTo,
+    leadFilters.closedAtFrom, leadFilters.closedAtTo,
+    leadFilters.q,
+  ]);
 
   useEffect(() => {
     const buId = leadFilters.businessUnitId;
@@ -177,7 +185,14 @@ const AdminLeads = () => {
     };
 
     loadLeadsData();
-  }, [leadFilters, pagination.currentPage, pagination.limit]);
+  }, [
+    leadFilters.businessUnitId, leadFilters.ownerUserId, leadFilters.status,
+    leadFilters.fuenteLead, leadFilters.productoCotizado,
+    leadFilters.createdAtFrom, leadFilters.createdAtTo,
+    leadFilters.closedAtFrom, leadFilters.closedAtTo,
+    leadFilters.q,
+    pagination.currentPage, pagination.limit,
+  ]);
 
   const handleReassignLead = async () => {
     if (!reassignModal.leadId || !reassignUserId) {

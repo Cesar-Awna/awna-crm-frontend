@@ -9,6 +9,7 @@ import { useState, useCallback } from 'react';
 export const usePagination = (initialPage = 1, initialLimit = 20) => {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [limit, setLimit] = useState(initialLimit);
+  const initialLimitRef = { current: initialLimit };
   const [totalPages, setTotalPages] = useState(0);
   const [totalDocs, setTotalDocs] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(false);
@@ -48,9 +49,13 @@ export const usePagination = (initialPage = 1, initialLimit = 20) => {
     }
   }, []);
 
+  const resetPage = useCallback(() => {
+    setCurrentPage(1);
+  }, []);
+
   const reset = useCallback(() => {
     setCurrentPage(1);
-    setLimit(20);
+    setLimit(initialLimitRef.current);
     setTotalPages(0);
     setTotalDocs(0);
     setHasNextPage(false);
@@ -70,5 +75,6 @@ export const usePagination = (initialPage = 1, initialLimit = 20) => {
     changeLimit,
     updatePaginationData,
     reset,
+    resetPage,
   };
 };
