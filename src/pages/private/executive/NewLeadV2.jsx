@@ -466,6 +466,9 @@ const NewLeadV2 = () => {
                     value={assignToUserId}
                     onChange={(e) => setAssignToUserId(e.target.value)}
                   >
+                    {me?.role === 'SUPERVISOR' && (
+                      <option value={String(me?.user?._id)}>Yo mismo</option>
+                    )}
                     {executives.map((u) => (
                       <option key={u._id} value={u._id}>{u.fullName}</option>
                     ))}
