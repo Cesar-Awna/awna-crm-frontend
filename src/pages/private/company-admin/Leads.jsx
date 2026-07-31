@@ -13,6 +13,7 @@ import { usePagination } from '../../../hooks/usePagination.js';
 import PaginationControls from '../../../components/PaginationControls.jsx';
 import LeadImportModal from '../../../components/LeadImportModal.jsx';
 import { useBU } from '../../../contexts/BUContext.jsx';
+import { getStoredSession } from '../../../lib/session.js';
 
 const FIELD_ALIASES = {
   rutEmpresa:     ['rut'],
@@ -97,7 +98,18 @@ const AdminLeads = () => {
         const meUser = me?.user;
         const alreadyIn = meUser ? execList.some((u) => u._id === String(meUser._id)) : true;
         setUsers(alreadyIn || !meUser ? execList : [{ _id: String(meUser._id), fullName: meUser.fullName }, ...execList]);
-        if (busRes?.success) setBusinessUnits(busRes.data || []);
+        if (busRes?.success) {
+          const allBus = busRes.data || [];
+          const session = getStoredSession();
+          const role = session?.roleName?.toUpperCase();
+          const isAdmin = role === 'COMPANY_ADMIN' || role === 'SUPER_ADMIN';
+          if (isAdmin) {
+            setBusinessUnits(allBus);
+          } else {
+            const userBuIds = (session?.businessUnitIds || []).map(String);
+            setBusinessUnits(allBus.filter((bu) => userBuIds.includes(String(bu._id))));
+          }
+        }
       } catch (e) {
         console.error('Error loading initial data:', e);
       }
