@@ -10,7 +10,6 @@ import {
   LEAD_STATUSES,
   getStatusLabel,
 } from '../../../lib/leadFormMappers.js';
-import { exportCSV } from '../../../utils/exportCSV.js';
 
 const STATUS_COLORS = {
   NUEVO: '#38bdf8',
@@ -20,9 +19,7 @@ const STATUS_COLORS = {
   COTIZACION_ENVIADA: '#fbbf24',
   EN_SEGUIMIENTO: '#f97316',
   CERRADO_GANADO: '#10b981',
-  CLIENTE: '#059669',
   CERRADO_PERDIDO: '#ef4444',
-  NO_INTERESADO: '#fb7185',
 };
 
 const formatDate = (dateStr) => {
@@ -42,14 +39,10 @@ const Leads = () => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('kanban');
   const [filterStatus, setFilterStatus] = useState('');
-  const [filterFuente, setFilterFuente] = useState('');
-  const [filterProducto, setFilterProducto] = useState('');
   const [search, setSearch] = useState('');
   const [buSchema, setBuSchema] = useState([]);
   const [pipelineStages, setPipelineStages] = useState([]);
-  const [productField, setProductField] = useState(null); // { key, options[] }
   const [leadStats, setLeadStats] = useState({ openCount: 0, wonCount: 0, lostCount: 0, invalidCount: 0 });
-  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     const loadSchema = async () => {
@@ -59,16 +52,8 @@ const Leads = () => {
       try {
         const res = await BusinessUnitsService.getSchema(buId);
         if (res?.success && res.data) {
-          const schema = res.data.leadSchema || [];
-          setBuSchema(schema);
+          setBuSchema(res.data.leadSchema || []);
           setPipelineStages(res.data.pipelineStages || []);
-          // Find the field used to track product — key may vary by BU
-          const pf = schema.find(
-            (f) => (f.type === 'select' || f.type === 'multiselect') &&
-                   (f.key === 'productoCotizado' || f.key === 'productosInteres' ||
-                    f.key.toLowerCase().includes('product'))
-          );
-          setProductField(pf ? { key: pf.key, options: pf.options || [] } : null);
         }
       } catch {
         // fallback to defaults
@@ -80,24 +65,13 @@ const Leads = () => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      setLoadError('');
       try {
-        const listParams = {
-          status: filterStatus || undefined,
-          limit: 1000,
-          page: 1,
-        };
         const [leadsRes, statsRes] = await Promise.all([
-          LeadsService.getAll(listParams),
+          LeadsService.getAll({ status: filterStatus || undefined, limit: 500 }),
           LeadsService.getStats({ status: filterStatus || undefined }),
         ]);
 
-        if (leadsRes?.success) {
-          setLeads(Array.isArray(leadsRes.data) ? leadsRes.data : []);
-        } else {
-          setLeads([]);
-          setLoadError(leadsRes?.message || 'No se pudieron cargar los leads.');
-        }
+        if (leadsRes?.success) setLeads(leadsRes.data || []);
         if (statsRes?.success) {
           setLeadStats({
             openCount: statsRes.data.openCount || 0,
@@ -108,8 +82,6 @@ const Leads = () => {
         }
       } catch (e) {
         console.error('Error loading leads:', e);
-        setLeads([]);
-        setLoadError(e?.response?.data?.message || e?.message || 'Error al cargar leads.');
       } finally {
         setLoading(false);
       }
@@ -131,12 +103,6 @@ const Leads = () => {
   };
 
   const filteredLeads = leads.filter((l) => {
-    if (filterFuente && (l.fields?.fuenteLead ?? '') !== filterFuente) return false;
-    if (filterProducto && productField) {
-      const val = l.fields?.[productField.key];
-      const match = Array.isArray(val) ? val.includes(filterProducto) : val === filterProducto;
-      if (!match) return false;
-    }
     if (!search) return true;
     const q = search.toLowerCase();
     if ((l.razonSocial || '').toLowerCase().includes(q)) return true;
@@ -154,9 +120,9 @@ const Leads = () => {
   const stages =
     pipelineStages.length > 0
       ? pipelineStages
-          .slice()
-          .sort((a, b) => a.order - b.order)
-          .map((s) => ({ value: s.key, label: s.label, color: s.color }))
+        .slice()
+        .sort((a, b) => a.order - b.order)
+        .map((s) => ({ value: s.key, label: s.label, color: s.color }))
       : LEAD_STATUSES.map((s) => ({ ...s, color: STATUS_COLORS[s.value] }));
 
   // Columns to show per lead in list and kanban
@@ -166,41 +132,20 @@ const Leads = () => {
 
   const getLeadsByStatus = (status) => filteredLeads.filter((l) => l.status === status);
 
-  const handleExportCSV = () => {
-    const cols = inlineFields.length > 0 ? inlineFields : [
-      { key: 'razonSocial',    label: 'Razón Social' },
-      { key: 'rutEmpresa',     label: 'RUT' },
-      { key: 'nombreContacto', label: 'Contacto' },
-      { key: 'telefono',       label: 'Teléfono' },
-      { key: 'correo',         label: 'Correo' },
-    ];
-    const csvData = filteredLeads.map((lead) => {
-      const row = {};
-      cols.forEach((col) => { row[col.label] = getLeadField(lead, col.key); });
-      row['Estado'] = getStatusLabel(lead.status) || lead.status || '—';
-      row['Ingreso'] = formatDate(lead.createdAt);
-      return row;
-    });
-    exportCSV(csvData, `leads-${new Date().toISOString().split('T')[0]}.csv`);
-  };
-
-  const stageKeySet = new Set(stages.map((s) => s.value));
-  const unmatchedLeads = filteredLeads.filter((l) => !stageKeySet.has(l.status));
-
   const stageTypes = (() => {
     if (pipelineStages.length > 0 && pipelineStages.some((s) => s.stageType && s.stageType !== 'open')) {
       return {
-        won:     pipelineStages.filter((s) => s.stageType === 'won').map((s) => s.key),
-        lost:    pipelineStages.filter((s) => s.stageType === 'lost').map((s) => s.key),
+        won: pipelineStages.filter((s) => s.stageType === 'won').map((s) => s.key),
+        lost: pipelineStages.filter((s) => s.stageType === 'lost').map((s) => s.key),
         invalid: pipelineStages.filter((s) => s.stageType === 'invalid').map((s) => s.key),
       };
     }
     return { won: ['CERRADO_GANADO'], lost: ['CERRADO_PERDIDO'], invalid: ['DATO_ERRADO'] };
   })();
   const closedKeys = [...stageTypes.won, ...stageTypes.lost, ...stageTypes.invalid];
-  const totalOpen  = leadStats.openCount ?? filteredLeads.filter((l) => !closedKeys.includes(l.status)).length;
-  const wonCount   = leadStats.wonCount ?? filteredLeads.filter((l) => stageTypes.won.includes(l.status)).length;
-  const lostCount  = leadStats.lostCount ?? filteredLeads.filter((l) => stageTypes.lost.includes(l.status)).length;
+  const totalOpen = leadStats.openCount ?? filteredLeads.filter((l) => !closedKeys.includes(l.status)).length;
+  const wonCount = leadStats.wonCount ?? filteredLeads.filter((l) => stageTypes.won.includes(l.status)).length;
+  const lostCount = leadStats.lostCount ?? filteredLeads.filter((l) => stageTypes.lost.includes(l.status)).length;
   const invalidCount = leadStats.invalidCount ?? filteredLeads.filter((l) => stageTypes.invalid.includes(l.status)).length;
 
   return (
@@ -248,22 +193,20 @@ const Leads = () => {
           <div className="flex overflow-hidden rounded-lg border border-[var(--border-color)]">
             <button
               type="button"
-              className={`px-4 py-2 text-sm transition-colors ${
-                viewMode === 'kanban'
+              className={`px-4 py-2 text-sm transition-colors ${viewMode === 'kanban'
                   ? 'bg-emerald-500 font-medium text-slate-950'
                   : 'bg-[var(--input-bg)] text-[var(--muted-fg)] hover:bg-[var(--hover-bg)]'
-              }`}
+                }`}
               onClick={() => setViewMode('kanban')}
             >
               Kanban
             </button>
             <button
               type="button"
-              className={`px-4 py-2 text-sm transition-colors ${
-                viewMode === 'list'
+              className={`px-4 py-2 text-sm transition-colors ${viewMode === 'list'
                   ? 'bg-emerald-500 font-medium text-slate-950'
                   : 'bg-[var(--input-bg)] text-[var(--muted-fg)] hover:bg-[var(--hover-bg)]'
-              }`}
+                }`}
               onClick={() => setViewMode('list')}
             >
               Lista
@@ -271,51 +214,16 @@ const Leads = () => {
           </div>
 
           {viewMode === 'list' && (
-            <>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
-              >
-                <option value="">Todos los estados</option>
-                {stages.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleExportCSV}
-                disabled={filteredLeads.length === 0}
-              >
-                📥 Exportar CSV
-              </Button>
-            </>
-          )}
-
-          <select
-            value={filterFuente}
-            onChange={(e) => setFilterFuente(e.target.value)}
-            className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
-          >
-            <option value="">Todas las fuentes</option>
-            {['Ads', 'Apolo', 'Referido', 'Otro'].map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </select>
-
-          {productField && productField.options.length > 0 && (
             <select
-              value={filterProducto}
-              onChange={(e) => setFilterProducto(e.target.value)}
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
               className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
             >
-              <option value="">Todos los productos</option>
-              {productField.options.map((o) => (
-                <option key={o} value={o}>{o}</option>
+              <option value="">Todos los estados</option>
+              {stages.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
               ))}
             </select>
           )}
@@ -328,12 +236,6 @@ const Leads = () => {
             className="min-w-[280px] flex-1 rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
           />
         </div>
-
-        {loadError ? (
-          <p className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-            {loadError}
-          </p>
-        ) : null}
 
         {loading ? (
           <p className="text-sm text-slate-400">Cargando leads…</p>
@@ -433,38 +335,6 @@ const Leads = () => {
                 </div>
               );
             })}
-            {unmatchedLeads.length > 0 ? (
-              <div className="flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-amber-500/40 bg-[var(--panel-bg)]">
-                <div className="flex items-center gap-2.5 border-b border-[var(--border-color)] bg-[var(--input-bg)] px-3 py-2.5">
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full bg-amber-500 ring-1 ring-[var(--border-color)]"
-                    aria-hidden
-                  />
-                  <div className="min-w-0 flex-1 text-sm font-medium text-[var(--input-fg)]">
-                    Otros estados{' '}
-                    <span className="font-normal text-[var(--muted-fg)]">({unmatchedLeads.length})</span>
-                  </div>
-                </div>
-                <div className="min-h-[200px] space-y-2 p-2">
-                  {unmatchedLeads.map((lead) => (
-                    <div
-                      key={lead._id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => navigate(`/leads/${lead._id}`)}
-                      className="cursor-pointer rounded-lg border border-amber-500/30 bg-[var(--input-bg)]/60 p-3"
-                    >
-                      <p className="truncate text-sm font-medium text-[var(--input-fg)]">
-                        {lead.razonSocial || `Lead #${lead._id.slice(-6)}`}
-                      </p>
-                      <p className="mt-1 text-xs text-amber-300/90">
-                        Estado: {getStatusLabel(lead.status) || lead.status || '—'}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
           </div>
         ) : (
           <Card>
@@ -480,8 +350,8 @@ const Leads = () => {
                       <tr className="border-b border-slate-700 text-left text-slate-400">
                         {listCols
                           ? listCols.map((col) => (
-                              <th key={col.key} className="pb-2 pr-4">{col.label}</th>
-                            ))
+                            <th key={col.key} className="pb-2 pr-4">{col.label}</th>
+                          ))
                           : (
                             <>
                               <th className="pb-2 pr-4">Razón Social</th>
@@ -500,10 +370,10 @@ const Leads = () => {
                         <tr key={lead._id} className="border-b border-slate-800">
                           {listCols
                             ? listCols.map((col) => (
-                                <td key={col.key} className="max-w-[160px] truncate py-2 pr-4 text-xs">
-                                  {getLeadField(lead, col.key)}
-                                </td>
-                              ))
+                              <td key={col.key} className="max-w-[160px] truncate py-2 pr-4 text-xs">
+                                {getLeadField(lead, col.key)}
+                              </td>
+                            ))
                             : (
                               <>
                                 <td className="max-w-[160px] truncate py-2 pr-4 text-xs">{lead.razonSocial || '—'}</td>
