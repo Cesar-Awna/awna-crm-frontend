@@ -880,6 +880,7 @@ const AdminLeads = () => {
                         <th className="pb-2 pr-4">Ejecutivo</th>
                         <th className="pb-2 pr-4">Estado</th>
                         <th className="pb-2 pr-4">Ingreso</th>
+                        <th className="pb-2 pr-4">Fecha de cierre</th>
                         <th className="pb-2">Acciones</th>
                       </tr>
                     </thead>
@@ -913,6 +914,9 @@ const AdminLeads = () => {
                           </td>
                           <td className="py-2 pr-4 text-xs text-slate-400">
                             {formatDate(lead.createdAt)}
+                          </td>
+                          <td className="py-2 pr-4 text-xs text-slate-400">
+                            {lead.closedAt ? formatDate(lead.closedAt) : '—'}
                           </td>
                           <td className="py-2 whitespace-nowrap">
                             <div className="flex flex-wrap gap-1">
