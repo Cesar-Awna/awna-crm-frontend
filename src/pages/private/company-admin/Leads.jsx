@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../../components/Sidebar.jsx';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx';
@@ -44,6 +44,16 @@ const STATUS_BADGE = {
   NO_INTERESADO: 'bg-pink-500/20 text-pink-300',
 };
 
+const STORAGE_KEY = 'admin-leads-state';
+const loadSavedState = () => {
+  try {
+    const s = sessionStorage.getItem(STORAGE_KEY);
+    if (!s) return null;
+    sessionStorage.removeItem(STORAGE_KEY);
+    return JSON.parse(s);
+  } catch { return null; }
+};
+
 const AdminLeads = () => {
   const navigate = useNavigate();
   const { activeBuId } = useBU();
@@ -53,7 +63,11 @@ const AdminLeads = () => {
   const [leadStats, setLeadStats] = useState({ total: 0, byStatus: {} });
   const [users, setUsers] = useState([]);
   const [businessUnits, setBusinessUnits] = useState([]);
-  const [leadFilters, setLeadFilters] = useState({
+
+  // Restore filters from sessionStorage when coming back from a lead detail
+  const _saved = useRef(loadSavedState());
+  const saved = _saved.current;
+  const [leadFilters, setLeadFilters] = useState(saved?.filters || {
     businessUnitId: '',
     ownerUserId: '',
     status: '',
@@ -65,6 +79,9 @@ const AdminLeads = () => {
     closedAtTo: '',
     q: '',
   });
+  const skipPageResetRef = useRef(!!saved);
+  const scrollRestoreRef = useRef(saved?.scroll ?? null);
+
   const [reassignModal, setReassignModal] = useState({ open: false, leadId: null });
   const [reassignUserId, setReassignUserId] = useState('');
   const [reassigning, setReassigning] = useState(false);
@@ -75,7 +92,7 @@ const AdminLeads = () => {
   const [activeBuStages, setActiveBuStages] = useState([]);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-  const pagination = usePagination(1, 100);
+  const pagination = usePagination(saved?.page || 1, 100);
 
   // Unassigned tab state
   const [unassignedLeads, setUnassignedLeads] = useState([]);
@@ -117,8 +134,9 @@ const AdminLeads = () => {
     loadData();
   }, [activeBuId]);
 
-  // Reset to page 1 whenever any filter changes (not when navigating pages)
+  // Reset to page 1 whenever filters change — skipped once when restoring saved state
   useEffect(() => {
+    if (skipPageResetRef.current) { skipPageResetRef.current = false; return; }
     pagination.resetPage();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -183,6 +201,11 @@ const AdminLeads = () => {
         if (leadsRes?.success && Array.isArray(leadsRes.data)) {
           setLeads(leadsRes.data);
           pagination.updatePaginationData(leadsRes.pagination);
+          if (scrollRestoreRef.current !== null) {
+            const y = scrollRestoreRef.current;
+            scrollRestoreRef.current = null;
+            requestAnimationFrame(() => window.scrollTo(0, y));
+          }
         } else {
           setLeads([]);
         }
@@ -215,6 +238,15 @@ const AdminLeads = () => {
     leadFilters.q,
     pagination.currentPage, pagination.limit,
   ]);
+
+  const openLead = (leadId) => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+      filters: leadFilters,
+      page: pagination.currentPage,
+      scroll: window.scrollY,
+    }));
+    navigate(`/leads/${leadId}`);
+  };
 
   const handleReassignLead = async () => {
     if (!reassignModal.leadId || !reassignUserId) {
@@ -888,7 +920,7 @@ const AdminLeads = () => {
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                onClick={() => navigate(`/leads/${lead._id}`)}
+                                onClick={() => openLead(lead._id)}
                               >
                                 Abrir
                               </Button>
