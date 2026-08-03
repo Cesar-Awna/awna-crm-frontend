@@ -417,7 +417,12 @@ const AdminLeads = () => {
     return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  const executives = users;
+  const executives = leadFilters.businessUnitId
+    ? users.filter((u) => {
+        const buIds = (u.businessUnitIds?.length ? u.businessUnitIds : [u.businessUnitId]).filter(Boolean).map(String);
+        return buIds.includes(leadFilters.businessUnitId);
+      })
+    : users;
   const dynCols = activeBuSchema.filter((f) => f.type !== 'textarea').slice(0, 4);
 
   const handleExportCSV = async () => {
@@ -744,7 +749,7 @@ const AdminLeads = () => {
               <select
                 className="h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                 value={leadFilters.businessUnitId}
-                onChange={(e) => setLeadFilters((f) => ({ ...f, businessUnitId: e.target.value }))}
+                onChange={(e) => setLeadFilters((f) => ({ ...f, businessUnitId: e.target.value, ownerUserId: '' }))}
               >
                 <option value="">Todas las unidades</option>
                 {businessUnits.map((bu) => (
