@@ -373,8 +373,8 @@ const Reports = () => {
                         <tbody>
                           {leadsData.map((lead) => (
                             <tr key={lead._id} className="border-b border-slate-800">
-                              <td className="py-2 pr-4 text-xs">{lead.razonSocial || '—'}</td>
-                              <td className="py-2 pr-4 text-xs">{lead.contactName || '—'}</td>
+                              <td className="py-2 pr-4 text-xs">{lead.fields?.razonSocial || lead.razonSocial || '—'}</td>
+                              <td className="py-2 pr-4 text-xs">{lead.fields?.nombreContacto || lead.fields?.contactName || lead.contactName || '—'}</td>
                               <td className="py-2 pr-4">
                                 <span
                                   className="inline-block rounded px-2 py-0.5 text-xs font-medium"
