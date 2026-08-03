@@ -368,6 +368,7 @@ const Reports = () => {
                             <th className="pb-2 pr-4">BU</th>
                             <th className="pb-2 pr-4">Ejecutivo</th>
                             <th className="pb-2 pr-4">Ingreso</th>
+                            <th className="pb-2 pr-4">Fecha de cierre</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -393,6 +394,7 @@ const Reports = () => {
                                 {executives.find((e) => e._id === lead.ownerUserId)?.fullName || '—'}
                               </td>
                               <td className="py-2 pr-4 text-xs text-slate-400">{formatDate(lead.createdAt)}</td>
+                              <td className="py-2 pr-4 text-xs text-slate-400">{lead.closedAt ? formatDate(lead.closedAt) : '—'}</td>
                             </tr>
                           ))}
                         </tbody>
