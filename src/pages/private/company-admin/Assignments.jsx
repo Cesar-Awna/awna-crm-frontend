@@ -106,7 +106,7 @@ const AdminAssignments = () => {
     const loadInitialData = async () => {
       try {
         const [usersRes, busRes] = await Promise.all([
-          UsersService.getExecutives(),
+          UsersService.getExecutives({ limit: 1000 }),
           BusinessUnitsService.getAll(),
         ]);
         if (usersRes?.success) setUsers(usersRes.data || []);

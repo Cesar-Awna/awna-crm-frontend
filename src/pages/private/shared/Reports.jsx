@@ -55,7 +55,7 @@ const Reports = () => {
       try {
         const [busRes, execRes] = await Promise.all([
           BusinessUnitsService.getAll(),
-          UsersService.getExecutives(),
+          UsersService.getExecutives({ limit: 1000 }),
         ]);
         if (busRes?.success) setBusinessUnits(busRes.data || []);
         if (execRes?.success) setExecutives(execRes.data || []);

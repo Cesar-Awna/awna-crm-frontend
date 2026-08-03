@@ -125,7 +125,7 @@ const NewLeadV2 = () => {
       if (meRes?.success && meRes.data) {
         setMe(meRes.data);
         if (meRes.data?.role === 'SUPERVISOR' || meRes.data?.role === 'COMPANY_ADMIN') {
-          const exRes = await UsersService.getExecutives();
+          const exRes = await UsersService.getExecutives({ limit: 1000 });
           if (!cancelled && exRes?.success) {
             const exList = exRes.data || [];
             setExecutives(exList);

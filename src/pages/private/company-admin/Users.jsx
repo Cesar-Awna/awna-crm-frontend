@@ -8,12 +8,11 @@ import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import { FloatingAlert } from '../../../components/ui/floating-alert.jsx';
 import { usePagination } from '../../../hooks/usePagination.js';
 import PaginationControls from '../../../components/PaginationControls.jsx';
-import { useBU } from '../../../contexts/BUContext.jsx';
 
 const ROLE_COLORS = {
   COMPANY_ADMIN: 'bg-purple-500/20 text-purple-300 border border-purple-500/30',
-  SUPERVISOR:   'bg-blue-500/20 text-blue-300 border border-blue-500/30',
-  EXECUTIVE:    'bg-sky-500/20 text-sky-300 border border-sky-500/30',
+  SUPERVISOR: 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
+  EXECUTIVE: 'bg-sky-500/20 text-sky-300 border border-sky-500/30',
 };
 
 const EMPTY_USER = {
@@ -21,7 +20,6 @@ const EMPTY_USER = {
 };
 
 const Users = () => {
-  const { activeBuId } = useBU();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -93,7 +91,7 @@ const Users = () => {
     loadUsers();
     loadBusinessUnits();
     loadSupervisors();
-  }, [activeBuId]);
+  }, []);
 
   useEffect(() => {
     loadUsers();

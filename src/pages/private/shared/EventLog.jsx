@@ -45,7 +45,7 @@ const EventLog = () => {
       try {
         const [eventsRes, execRes] = await Promise.all([
           LeadEventsService.getAll({ limit: 50 }),
-          UsersService.getExecutives(),
+          UsersService.getExecutives({ limit: 1000 }),
         ]);
         if (eventsRes?.success) setEvents(eventsRes.data || []);
         if (execRes?.success) setExecutives(execRes.data || []);

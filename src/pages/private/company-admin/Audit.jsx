@@ -54,7 +54,7 @@ const Audit = () => {
   React.useEffect(() => {
     const loadExecutives = async () => {
       try {
-        const res = await UsersService.getExecutives();
+        const res = await UsersService.getExecutives({ limit: 1000 });
         if (res?.success) setExecutives(res.data || []);
       } catch (e) {
         console.error('Error loading executives:', e);

@@ -15,9 +15,7 @@ const STATUS_COLORS = {
   COTIZACION_ENVIADA: '#fbbf24',
   EN_SEGUIMIENTO: '#f97316',
   CERRADO_GANADO: '#10b981',
-  CLIENTE: '#059669',
   CERRADO_PERDIDO: '#ef4444',
-  NO_INTERESADO: '#fb7185',
 };
 
 const ACTIVITY_PALETTE = [
@@ -28,21 +26,21 @@ const ACTIVITY_PALETTE = [
 
 const PERIODS = [
   { value: 'today', label: 'Hoy' },
-  { value: 'week',  label: 'Semana' },
+  { value: 'week', label: 'Semana' },
   { value: 'month', label: 'Mes' },
 ];
 
 const SupervisorMetrics = () => {
-  const [conversion, setConversion]         = useState(null);
-  const [summary, setSummary]               = useState(null);
-  const [loading, setLoading]               = useState(true);
-  const [activityData, setActivityData]     = useState(null);
+  const [conversion, setConversion] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activityData, setActivityData] = useState(null);
   const [activityPeriod, setActivityPeriod] = useState('today');
-  const [executives, setExecutives]         = useState([]);
-  const [metricsData, setMetricsData]       = useState({});
-  const [counters, setCounters]             = useState(null);
-  const [error, setError]                   = useState(null);
-  const [success, setSuccess]               = useState(null);
+  const [executives, setExecutives] = useState([]);
+  const [metricsData, setMetricsData] = useState({});
+  const [counters, setCounters] = useState(null);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   useEffect(() => {
     const loadMetrics = async () => {
@@ -69,13 +67,13 @@ const SupervisorMetrics = () => {
     const params = { period: activityPeriod };
     MetricsService.getActivity(params)
       .then((res) => { if (res?.success) setActivityData(res.data); })
-      .catch(() => {});
+      .catch(() => { });
   }, [activityPeriod]);
 
   useEffect(() => {
     const loadExecutives = async () => {
       try {
-        const usersRes = await UsersService.getExecutives();
+        const usersRes = await UsersService.getExecutives({ limit: 1000 });
         if (usersRes?.success && Array.isArray(usersRes.data)) {
           setExecutives(usersRes.data);
           const metrics = {};
@@ -98,10 +96,10 @@ const SupervisorMetrics = () => {
     loadExecutives();
   }, []);
 
-  const total    = conversion?.total || 0;
-  const won      = conversion?.won || 0;
-  const lost     = conversion?.lost || 0;
-  const open     = conversion?.open || 0;
+  const total = conversion?.total || 0;
+  const won = conversion?.won || 0;
+  const lost = conversion?.lost || 0;
+  const open = conversion?.open || 0;
   const byStatus = conversion?.byStatus || summary?.byStatus || {};
   const maxCount = Math.max(...Object.values(byStatus), 1);
 
@@ -145,7 +143,7 @@ const SupervisorMetrics = () => {
       if (res?.success) {
         setSuccess('Ejecutivo eliminado correctamente.');
         setTimeout(() => setSuccess(null), 4000);
-        const usersRes = await UsersService.getExecutives();
+        const usersRes = await UsersService.getExecutives({ limit: 1000 });
         if (usersRes?.success && Array.isArray(usersRes.data)) {
           setExecutives(usersRes.data);
           await handleRefreshMetrics();
@@ -312,11 +310,10 @@ const SupervisorMetrics = () => {
                       <button
                         key={p.value}
                         onClick={() => setActivityPeriod(p.value)}
-                        className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-                          activityPeriod === p.value
+                        className={`rounded px-2 py-1 text-xs font-medium transition-colors ${activityPeriod === p.value
                             ? 'bg-slate-600 text-slate-100'
                             : 'text-slate-400 hover:text-slate-300'
-                        }`}
+                          }`}
                       >
                         {p.label}
                       </button>
@@ -331,13 +328,13 @@ const SupervisorMetrics = () => {
                   <div className="space-y-3">
                     {[
                       ...activityTypes.map((a, i) => ({
-                        key:   a.key,
+                        key: a.key,
                         label: a.label,
                         count: activityByType[a.key] || 0,
                         color: ACTIVITY_PALETTE[i % ACTIVITY_PALETTE.length],
                       })),
                       {
-                        key:   'closures',
+                        key: 'closures',
                         label: 'Cierres (ganados)',
                         count: activityData?.closures || 0,
                         color: '#10b981',
@@ -469,7 +466,7 @@ const SupervisorMetrics = () => {
                                   {conversionRate}%
                                 </span>
                               </td>
-                            <td className="py-3 text-right">
+                              <td className="py-3 text-right">
                                 <Button
                                   size="sm"
                                   variant="outline"

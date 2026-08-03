@@ -88,7 +88,7 @@ const AdminLeads = () => {
     const loadData = async () => {
       try {
         const [usersRes, busRes, meRes] = await Promise.all([
-          UsersService.getExecutives(),
+          UsersService.getExecutives({ limit: 1000 }),
           BusinessUnitsService.getAll(),
           AuthService.getMe(),
         ]);

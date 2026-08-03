@@ -38,7 +38,7 @@ const useDashboardData = (businessUnitId, activityPeriod = 'week') => {
         MetricsService.getActivity(params),
         RankingService.getWeekly(),
         LeadsService.getStats(leadsParams),
-        UsersService.getExecutives(),
+        UsersService.getExecutives({ limit: 1000 }),
       ]);
 
       setData({
