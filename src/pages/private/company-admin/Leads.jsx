@@ -469,6 +469,8 @@ const AdminLeads = () => {
         row['Estado']          = getStatusLabel(lead.status) || lead.status || '—';
         row['Ingreso']         = formatDate(lead.createdAt);
         row['Fecha de cierre'] = lead.closedAt ? formatDate(lead.closedAt) : '—';
+        row['Valor esperado']  = lead.fields?.valorEsperado || '—';
+        row['Moneda']          = lead.fields?.monedaValorEsperado || '—';
         return row;
       });
       exportCSV(csvData, `leads-${new Date().toISOString().split('T')[0]}.csv`);
