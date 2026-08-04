@@ -6,6 +6,7 @@ import { Button } from '../../../components/ui/button.jsx';
 import LeadsService from '../../../services/Leads.js';
 import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import { getStoredSession } from '../../../lib/session.js';
+import { exportCSV } from '../../../utils/exportCSV.js';
 import {
   LEAD_STATUSES,
   getStatusLabel,
@@ -132,6 +133,24 @@ const Leads = () => {
 
   const getLeadsByStatus = (status) => filteredLeads.filter((l) => l.status === status);
 
+  const handleExportCSV = () => {
+    const cols = listCols || [
+      { key: 'razonSocial',    label: 'Razón Social' },
+      { key: 'rutEmpresa',     label: 'RUT' },
+      { key: 'nombreContacto', label: 'Contacto' },
+      { key: 'telefono',       label: 'Teléfono' },
+    ];
+    const csvData = filteredLeads.map((lead) => {
+      const row = {};
+      cols.forEach((col) => { row[col.label] = getLeadField(lead, col.key); });
+      row['Estado']          = getStatusLabel(lead.status) || lead.status || '—';
+      row['Ingreso']         = formatDate(lead.createdAt);
+      row['Fecha de cierre'] = lead.closedAt ? formatDate(lead.closedAt) : '—';
+      return row;
+    });
+    exportCSV(csvData, `mis-leads-${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
   const stageTypes = (() => {
     if (pipelineStages.length > 0 && pipelineStages.some((s) => s.stageType && s.stageType !== 'open')) {
       return {
@@ -214,18 +233,28 @@ const Leads = () => {
           </div>
 
           {viewMode === 'list' && (
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
-            >
-              <option value="">Todos los estados</option>
-              {stages.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
+            <>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
+              >
+                <option value="">Todos los estados</option>
+                {stages.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleExportCSV}
+                disabled={filteredLeads.length === 0}
+              >
+                Exportar Excel
+              </Button>
+            </>
           )}
 
           <input
