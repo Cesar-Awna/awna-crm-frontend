@@ -57,6 +57,9 @@ const loadSavedState = () => {
 const AdminLeads = () => {
   const navigate = useNavigate();
   const { activeBuId } = useBU();
+  const _session = getStoredSession();
+  const isSupervisor = _session?.roleName?.toUpperCase() === 'SUPERVISOR';
+  const currentUserId = _session?.userId || null;
   const [activeTab, setActiveTab] = useState('leads');
   const [leads, setLeads] = useState([]);
   const [loadingLeads, setLoadingLeads] = useState(true);
@@ -732,8 +735,21 @@ const AdminLeads = () => {
         ))}
 
         {activeTab === 'leads' && <><Card className="mb-6">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Filtros</CardTitle>
+            {isSupervisor && currentUserId && (
+              <Button
+                type="button"
+                size="sm"
+                variant={leadFilters.ownerUserId === currentUserId ? 'default' : 'outline'}
+                onClick={() => setLeadFilters((f) => ({
+                  ...f,
+                  ownerUserId: f.ownerUserId === currentUserId ? '' : currentUserId,
+                }))}
+              >
+                {leadFilters.ownerUserId === currentUserId ? 'Mis Leads ✓' : 'Mis Leads'}
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-3">
             {/* Buscador por nombre */}
