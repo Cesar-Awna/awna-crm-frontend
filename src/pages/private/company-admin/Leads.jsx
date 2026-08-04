@@ -737,21 +737,23 @@ const AdminLeads = () => {
         ))}
 
         {activeTab === 'leads' && <><Card className="mb-6">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Filtros</CardTitle>
-            {isSupervisor && currentUserId && (
-              <Button
-                type="button"
-                size="sm"
-                variant={leadFilters.ownerUserId === currentUserId ? 'default' : 'outline'}
-                onClick={() => setLeadFilters((f) => ({
-                  ...f,
-                  ownerUserId: f.ownerUserId === currentUserId ? '' : currentUserId,
-                }))}
-              >
-                {leadFilters.ownerUserId === currentUserId ? 'Mis Leads ✓' : 'Mis Leads'}
-              </Button>
-            )}
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Filtros</CardTitle>
+              {isSupervisor && currentUserId && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={leadFilters.ownerUserId === currentUserId ? 'default' : 'outline'}
+                  onClick={() => setLeadFilters((f) => ({
+                    ...f,
+                    ownerUserId: f.ownerUserId === currentUserId ? '' : currentUserId,
+                  }))}
+                >
+                  {leadFilters.ownerUserId === currentUserId ? 'Mis Leads ✓' : 'Mis Leads'}
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {/* Buscador por nombre */}
