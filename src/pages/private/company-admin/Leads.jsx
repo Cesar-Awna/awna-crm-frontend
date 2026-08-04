@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from '../../../components/Sidebar.jsx';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx';
 import { Button } from '../../../components/ui/button.jsx';
@@ -57,6 +57,7 @@ const loadSavedState = () => {
 const AdminLeads = () => {
   const navigate = useNavigate();
   const { activeBuId } = useBU();
+  const [searchParams] = useSearchParams();
   const _session = getStoredSession();
   const isSupervisor = _session?.roleName?.toUpperCase() === 'SUPERVISOR';
   const currentUserId = _session?.userId || null;
@@ -70,9 +71,10 @@ const AdminLeads = () => {
   // Restore filters from sessionStorage when coming back from a lead detail
   const _saved = useRef(loadSavedState());
   const saved = _saved.current;
+  const _ownerMe = searchParams.get('owner') === 'me' && currentUserId ? currentUserId : '';
   const [leadFilters, setLeadFilters] = useState(saved?.filters || {
     businessUnitId: '',
-    ownerUserId: '',
+    ownerUserId: _ownerMe,
     status: '',
     fuenteLead: '',
     productoCotizado: '',

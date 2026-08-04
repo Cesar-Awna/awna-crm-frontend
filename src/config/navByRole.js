@@ -25,12 +25,13 @@ const EXECUTIVE = [
 ];
 
 const SUPERVISOR = [
-  { key: 'leads',        label: 'Leads',           to: '/leads',       icon: Users },
-  { key: 'ranking',      label: 'Ranking',         to: '/ranking',     icon: Trophy },
-  { key: 'metrics',      label: 'Métricas',        to: '/metrics',     icon: BarChart2 },
-  { key: 'assignments',  label: 'Asignaciones',    to: '/assignments', icon: ClipboardList },
-  { key: 'notifications',label: 'Notificaciones',  to: '/notifications',icon: Bell },
-  { key: 'profile',      label: 'Perfil',          to: '/profile',     icon: User },
+  { key: 'leads',        label: 'Leads',           to: '/leads',           icon: Users },
+  { key: 'mis-leads',    label: 'Mis Leads',        to: '/leads?owner=me',  icon: User },
+  { key: 'ranking',      label: 'Ranking',         to: '/ranking',         icon: Trophy },
+  { key: 'metrics',      label: 'Métricas',        to: '/metrics',         icon: BarChart2 },
+  { key: 'assignments',  label: 'Asignaciones',    to: '/assignments',     icon: ClipboardList },
+  { key: 'notifications',label: 'Notificaciones',  to: '/notifications',   icon: Bell },
+  { key: 'profile',      label: 'Perfil',          to: '/profile',         icon: User },
 ];
 
 const COMPANY_ADMIN = [
