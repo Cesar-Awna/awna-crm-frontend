@@ -181,31 +181,22 @@ const Leads = () => {
           </div>
         </header>
 
-        <div className="mb-6 grid grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="border-l-[3px] border-l-sky-500/50 pt-4 text-center">
-              <p className="text-xs uppercase text-[var(--muted-fg)]">En gestión</p>
-              <p className="text-2xl font-semibold tabular-nums tracking-tight text-[var(--input-fg)]">
-                {totalOpen}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="border-l-[3px] border-l-emerald-500/50 pt-4 text-center">
-              <p className="text-xs uppercase text-[var(--muted-fg)]">Ganados</p>
-              <p className="text-2xl font-semibold tabular-nums tracking-tight text-[var(--input-fg)]">
-                {wonCount}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="border-l-[3px] border-l-rose-500/45 pt-4 text-center">
-              <p className="text-xs uppercase text-[var(--muted-fg)]">Perdidos</p>
-              <p className="text-2xl font-semibold tabular-nums tracking-tight text-[var(--input-fg)]">
-                {lostCount}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          {stages
+            .filter((s) => !closedKeys.includes(s.value))
+            .map((s) => (
+              <Card key={s.value}>
+                <CardContent
+                  className="border-l-[3px] pt-4 text-center"
+                  style={{ borderLeftColor: `${s.color}99` }}
+                >
+                  <p className="text-xs uppercase text-(--muted-fg)">{s.label}</p>
+                  <p className="text-2xl font-semibold tabular-nums tracking-tight text-(--input-fg)">
+                    {getLeadsByStatus(s.value).length}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
         </div>
 
         <div className="mb-6 flex flex-wrap gap-3">
