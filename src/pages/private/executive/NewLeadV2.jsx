@@ -70,6 +70,9 @@ const EVENT_ICONS = {
   QUOTE_SENT: '📄',
   RESCHEDULE: '📅',
   NOTE_ADDED: '📝',
+  NO_CONTESTO: '📵',
+  VISIT: '🏢',
+  VISIT_ATTENDED: '🤝',
 };
 
 const NewLeadV2 = () => {
@@ -675,7 +678,7 @@ const NewLeadV2 = () => {
                           <div key={ev._id} className="flex items-start gap-3 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] p-3">
                             <span className="mt-0.5 text-base leading-none">{EVENT_ICONS[ev.eventType] || '•'}</span>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium">{getActivityLabel(ev.eventType)}</p>
+                              <p className="text-sm font-medium">{getActivityLabel(ev.eventType, buActivityTypes)}</p>
                               {ev.metadata?.note && (
                                 <p className="mt-0.5 text-xs text-(--muted-fg)">{ev.metadata.note}</p>
                               )}
