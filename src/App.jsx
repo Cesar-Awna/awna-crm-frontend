@@ -9,6 +9,7 @@ import Dashboard from './pages/private/company-admin/Dashboard.jsx';
 import MyDay from './pages/private/executive/MyDay.jsx';
 import LeadsRouter from './pages/private/LeadsRouter.jsx';
 import NewLead from './pages/private/executive/NewLeadV2.jsx';
+import MisLeads from './pages/private/executive/Leads.jsx';
 import RankingRouter from './pages/private/RankingRouter.jsx';
 import MyRanking from './pages/private/executive/MyRanking.jsx';
 import MetricsRouter from './pages/private/MetricsRouter.jsx';
@@ -37,6 +38,7 @@ function App() {
           <Route path="/leads" element={<LeadsRouter />} />
           <Route path="/leads/new" element={<NewLead />} />
           <Route path="/leads/:leadId" element={<NewLead />} />
+          <Route path="/mis-leads" element={<MisLeads />} />
           <Route path="/ranking" element={<RankingRouter />} />
           <Route path="/my-ranking" element={<MyRanking />} />
           <Route path="/metrics" element={<MetricsRouter />} />

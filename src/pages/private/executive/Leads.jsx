@@ -45,6 +45,11 @@ const Leads = () => {
   const [pipelineStages, setPipelineStages] = useState([]);
   const [leadStats, setLeadStats] = useState({ openCount: 0, wonCount: 0, lostCount: 0, invalidCount: 0 });
 
+  // When a SUPERVISOR lands on /mis-leads, scope leads to their own userId
+  const _session = getStoredSession();
+  const _isSupervisor = _session?.roleName?.toUpperCase() === 'SUPERVISOR';
+  const _ownerUserId = _isSupervisor ? _session?.userId : undefined;
+
   useEffect(() => {
     const loadSchema = async () => {
       const session = getStoredSession();
@@ -67,9 +72,11 @@ const Leads = () => {
     const loadData = async () => {
       setLoading(true);
       try {
+        const params = { status: filterStatus || undefined, limit: 500 };
+        if (_ownerUserId) params.ownerUserId = _ownerUserId;
         const [leadsRes, statsRes] = await Promise.all([
-          LeadsService.getAll({ status: filterStatus || undefined, limit: 500 }),
-          LeadsService.getStats({ status: filterStatus || undefined }),
+          LeadsService.getAll(params),
+          LeadsService.getStats(_ownerUserId ? { ownerUserId: _ownerUserId } : {}),
         ]);
 
         if (leadsRes?.success) setLeads(leadsRes.data || []);
