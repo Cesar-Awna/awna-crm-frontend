@@ -87,6 +87,13 @@ const AdminLeads = () => {
   const skipPageResetRef = useRef(!!saved);
   const scrollRestoreRef = useRef(saved?.scroll ?? null);
 
+  // React to ?owner=me URL param when component is already mounted (sidebar nav)
+  useEffect(() => {
+    if (searchParams.get('owner') === 'me' && currentUserId) {
+      setLeadFilters((f) => ({ ...f, ownerUserId: currentUserId }));
+    }
+  }, [searchParams, currentUserId]);
+
   const [reassignModal, setReassignModal] = useState({ open: false, leadId: null });
   const [reassignUserId, setReassignUserId] = useState('');
   const [reassigning, setReassigning] = useState(false);
