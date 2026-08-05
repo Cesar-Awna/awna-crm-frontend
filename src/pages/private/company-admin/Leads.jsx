@@ -774,6 +774,9 @@ const AdminLeads = () => {
                 onChange={(e) => setLeadFilters((f) => ({ ...f, businessUnitId: e.target.value, ownerUserId: '' }))}
               >
                 <option value="">Todas las unidades</option>
+                {leadFilters.businessUnitId && !businessUnits.some((bu) => bu._id === leadFilters.businessUnitId) && (
+                  <option value={leadFilters.businessUnitId}>Cargando…</option>
+                )}
                 {businessUnits.map((bu) => (
                   <option key={bu._id} value={bu._id}>{bu.code} — {bu.name}</option>
                 ))}
@@ -784,6 +787,9 @@ const AdminLeads = () => {
                 onChange={(e) => setLeadFilters((f) => ({ ...f, ownerUserId: e.target.value }))}
               >
                 <option value="">Todos los ejecutivos</option>
+                {leadFilters.ownerUserId && !executives.some((u) => u._id === leadFilters.ownerUserId) && (
+                  <option value={leadFilters.ownerUserId}>Cargando…</option>
+                )}
                 {executives.map((u) => (
                   <option key={u._id} value={u._id}>{u.fullName}</option>
                 ))}
