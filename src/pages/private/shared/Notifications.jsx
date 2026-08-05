@@ -52,9 +52,7 @@ const Notifications = () => {
     try {
       const res = await NotificationsService.markAsRead(id);
       if (res?.success) {
-        setNotifications((prev) =>
-          prev.map((n) => (n._id === id ? { ...n, readAt: new Date().toISOString() } : n))
-        );
+        setNotifications((prev) => prev.filter((n) => n._id !== id));
       }
     } catch (e) {
       console.error('Error marking as read:', e);
