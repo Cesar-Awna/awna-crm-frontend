@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../../../components/Sidebar.jsx';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx';
 import { Button } from '../../../components/ui/button.jsx';
@@ -49,6 +49,18 @@ const Reports = () => {
   const [activityPeriod, setActivityPeriod] = useState('week');
   const [activityUserId, setActivityUserId] = useState('');
   const [exportLeadsLoading, setExportLeadsLoading] = useState(false);
+  const [productOptions, setProductOptions] = useState([]);
+
+  useEffect(() => {
+    if (!leadsFilters.businessUnitId) { setProductOptions([]); return; }
+    BusinessUnitsService.getSchema(leadsFilters.businessUnitId)
+      .then((res) => {
+        if (!res?.success) return;
+        const field = (res.data?.leadSchema || []).find((f) => f.key === 'productoCotizado');
+        setProductOptions(field?.options || []);
+      })
+      .catch(() => setProductOptions([]));
+  }, [leadsFilters.businessUnitId]);
 
   React.useEffect(() => {
     const loadFilters = async () => {
@@ -319,7 +331,7 @@ const Reports = () => {
                     className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                   >
                     <option value="">Todos los productos</option>
-                    {['Mora Control', 'Reporte Interactivo'].map((o) => (
+                    {productOptions.map((o) => (
                       <option key={o} value={o}>{o}</option>
                     ))}
                   </select>

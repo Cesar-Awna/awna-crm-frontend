@@ -104,6 +104,18 @@ const AdminLeads = () => {
   const [activeBuStages, setActiveBuStages] = useState([]);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [productOptions, setProductOptions] = useState([]);
+
+  useEffect(() => {
+    if (!leadFilters.businessUnitId) { setProductOptions([]); return; }
+    BusinessUnitsService.getSchema(leadFilters.businessUnitId)
+      .then((res) => {
+        if (!res?.success) return;
+        const field = (res.data?.leadSchema || []).find((f) => f.key === 'productoCotizado');
+        setProductOptions(field?.options || []);
+      })
+      .catch(() => setProductOptions([]));
+  }, [leadFilters.businessUnitId]);
   const pagination = usePagination(saved?.page || 1, 100);
 
   // Unassigned tab state
@@ -834,7 +846,7 @@ const AdminLeads = () => {
                 onChange={(e) => setLeadFilters((f) => ({ ...f, productoCotizado: e.target.value }))}
               >
                 <option value="">Todos los productos</option>
-                {['Mora Control', 'Reporte Interactivo'].map((o) => (
+                {productOptions.map((o) => (
                   <option key={o} value={o}>{o}</option>
                 ))}
               </select>
