@@ -192,6 +192,13 @@ const Reports = () => {
         'Ejecutivo': executives.find((e) => e._id === lead.ownerUserId)?.fullName || '—',
         'Ingreso': formatDate(lead.createdAt),
         'Fecha de cierre': lead.closedAt ? formatDate(lead.closedAt) : '—',
+        'Llamadas realizadas': lead.callCount ?? 0,
+        'Contactos efectivos': lead.contactSuccessCount ?? 0,
+        'Seguimientos': lead.followupCount ?? 0,
+        'WhatsApp enviados': lead.whatsappSentCount ?? 0,
+        'Correos enviados': lead.emailSentCount ?? 0,
+        'Cotizaciones enviadas': lead.quoteSentCount ?? 0,
+        'Reagendamientos': lead.rescheduleCount ?? 0,
       }));
       exportCSV(csvData, `reporte-leads-${new Date().toISOString().split('T')[0]}.csv`);
     } finally {
