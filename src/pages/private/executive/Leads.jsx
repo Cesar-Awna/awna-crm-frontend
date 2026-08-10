@@ -72,7 +72,7 @@ const Leads = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const params = { status: filterStatus || undefined, limit: 500 };
+        const params = { status: filterStatus || undefined, limit: 1000, sort: '-updatedAt' };
         if (_ownerUserId) params.ownerUserId = _ownerUserId;
         const [leadsRes, statsRes] = await Promise.all([
           LeadsService.getAll(params),
