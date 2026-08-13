@@ -25,6 +25,7 @@ import Companies from './pages/private/super-admin/Companies.jsx';
 import CompanyDetail from './pages/private/super-admin/CompanyDetail.jsx';
 import Monitoring from './pages/private/super-admin/Monitoring.jsx';
 import Support from './pages/private/super-admin/Support.jsx';
+import TicketsAdmin from './pages/private/support/TicketsAdmin.jsx';
 
 function App() {
   return (
@@ -54,6 +55,7 @@ function App() {
           <Route path="/companies/:id" element={<CompanyDetail />} />
           <Route path="/monitoring" element={<Monitoring />} />
           <Route path="/support" element={<Support />} />
+          <Route path="/tickets" element={<TicketsAdmin />} />
           <Route path="*" element={<DefaultRedirect />} />
         </Route>
       </Routes>

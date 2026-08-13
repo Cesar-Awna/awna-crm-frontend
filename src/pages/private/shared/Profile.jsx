@@ -8,12 +8,14 @@ import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import CompaniesService from '../../../services/Companies.js';
 import ChangePasswordCard from '../../../components/ChangePasswordCard.jsx';
 import { FloatingAlert } from '../../../components/ui/floating-alert.jsx';
+import TicketsSection from '../../../components/TicketsSection.jsx';
 
 const ROLE_LABELS = {
   SUPER_ADMIN: 'Super Administrador',
   COMPANY_ADMIN: 'Administrador de Empresa',
   SUPERVISOR: 'Supervisor',
   EXECUTIVE: 'Ejecutivo',
+  SOPORTE: 'Soporte',
 };
 
 const Profile = () => {
@@ -346,6 +348,9 @@ const Profile = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Support Tickets */}
+            <TicketsSection />
           </div>
         )}
       </main>

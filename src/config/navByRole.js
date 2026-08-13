@@ -46,6 +46,12 @@ const COMPANY_ADMIN = [
   { key: 'profile',      label: 'Perfil',            to: '/profile',     icon: User },
 ];
 
+const SOPORTE = [
+  { key: 'tickets',      label: 'Tickets',         to: '/tickets',     icon: HeadphonesIcon },
+  { key: 'notifications',label: 'Notificaciones',  to: '/notifications',icon: Bell },
+  { key: 'profile',      label: 'Perfil',          to: '/profile',     icon: User },
+];
+
 const SUPER_ADMIN = [
   { key: 'companies',    label: 'Empresas',        to: '/companies',   icon: Building2 },
   { key: 'monitoring',   label: 'Monitoreo',       to: '/monitoring',  icon: Activity },
@@ -57,6 +63,7 @@ export const NAV_BY_ROLE = {
   SUPERVISOR,
   COMPANY_ADMIN,
   SUPER_ADMIN,
+  SOPORTE,
 };
 
 export const DEFAULT_PATH_BY_ROLE = {
@@ -64,6 +71,7 @@ export const DEFAULT_PATH_BY_ROLE = {
   SUPERVISOR: '/leads',
   COMPANY_ADMIN: '/leads',
   SUPER_ADMIN: '/companies',
+  SOPORTE: '/tickets',
 };
 
 export function getNavItemsForRole(roleName) {
