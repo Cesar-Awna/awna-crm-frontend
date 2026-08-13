@@ -126,25 +126,25 @@ const TicketsAdmin = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="pt-4">
-              <p className="text-xs text-slate-400 uppercase tracking-wide">Total</p>
-              <p className="text-2xl font-bold text-slate-100">{counts.total}</p>
+              <p className="text-xs text-(--muted-fg) uppercase tracking-wide">Total</p>
+              <p className="text-2xl font-bold text-(--app-fg)">{counts.total}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
-              <p className="text-xs text-slate-400 uppercase tracking-wide">Abiertos</p>
+              <p className="text-xs text-(--muted-fg) uppercase tracking-wide">Abiertos</p>
               <p className="text-2xl font-bold text-amber-400">{counts.abiertos}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
-              <p className="text-xs text-slate-400 uppercase tracking-wide">En revisión</p>
+              <p className="text-xs text-(--muted-fg) uppercase tracking-wide">En revisión</p>
               <p className="text-2xl font-bold text-blue-400">{counts.enRevision}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
-              <p className="text-xs text-slate-400 uppercase tracking-wide">Resueltos</p>
+              <p className="text-xs text-(--muted-fg) uppercase tracking-wide">Resueltos</p>
               <p className="text-2xl font-bold text-emerald-400">{counts.resueltos}</p>
             </CardContent>
           </Card>
@@ -155,7 +155,7 @@ const TicketsAdmin = () => {
           <select
             value={filters.status}
             onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-            className="rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            className="rounded-md border border-(--input-border) bg-(--input-bg) px-3 py-2 text-sm text-(--input-fg)"
           >
             <option value="">Todos los estados</option>
             {Object.entries(TICKET_STATUS_META).map(([value, meta]) => (
@@ -166,7 +166,7 @@ const TicketsAdmin = () => {
           <select
             value={filters.type}
             onChange={(e) => setFilters((f) => ({ ...f, type: e.target.value }))}
-            className="rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            className="rounded-md border border-(--input-border) bg-(--input-bg) px-3 py-2 text-sm text-(--input-fg)"
           >
             <option value="">Todos los tipos</option>
             {Object.entries(TICKET_TYPE_LABELS).map(([value, label]) => (
@@ -178,7 +178,7 @@ const TicketsAdmin = () => {
             <select
               value={filters.businessUnitId}
               onChange={(e) => setFilters((f) => ({ ...f, businessUnitId: e.target.value }))}
-              className="rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="rounded-md border border-(--input-border) bg-(--input-bg) px-3 py-2 text-sm text-(--input-fg)"
             >
               <option value="">Todas las BU</option>
               {businessUnits.map((bu) => (
@@ -201,9 +201,9 @@ const TicketsAdmin = () => {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-sm text-slate-400">Cargando tickets…</p>
+              <p className="text-sm text-(--muted-fg)">Cargando tickets…</p>
             ) : tickets.length === 0 ? (
-              <p className="py-8 text-center text-sm text-slate-500">
+              <p className="py-8 text-center text-sm text-(--muted-fg)">
                 No hay tickets con estos filtros.
               </p>
             ) : (
@@ -213,19 +213,19 @@ const TicketsAdmin = () => {
                   return (
                     <div
                       key={t._id}
-                      className="rounded-lg border border-slate-800 bg-slate-900/60 p-4"
+                      className="rounded-lg border border-(--border-color) bg-(--input-bg) p-4"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-medium text-slate-100">{t.title}</p>
+                            <p className="font-medium text-(--app-fg)">{t.title}</p>
                             <span
                               className={`rounded px-2 py-0.5 text-xs font-medium ${statusMeta.className}`}
                             >
                               {statusMeta.label}
                             </span>
                           </div>
-                          <p className="mt-1 text-xs text-slate-400">
+                          <p className="mt-1 text-xs text-(--muted-fg)">
                             {t.userFullName || 'Usuario'} · {buName(t.businessUnitId)} ·{' '}
                             {TICKET_TYPE_LABELS[t.type] || t.type} · {formatDateTime(t.createdAt)}
                           </p>
@@ -260,7 +260,7 @@ const TicketsAdmin = () => {
                       </div>
 
                       {t.description && (
-                        <p className="mt-3 whitespace-pre-wrap text-sm text-slate-300">
+                        <p className="mt-3 whitespace-pre-wrap text-sm text-(--muted-fg-2)">
                           {t.description}
                         </p>
                       )}
@@ -278,7 +278,7 @@ const TicketsAdmin = () => {
                             <img
                               src={t.evidenceUrl}
                               alt="Captura adjunta"
-                              className="max-h-48 rounded-md border border-slate-700 hover:opacity-80"
+                              className="max-h-48 rounded-md border border-(--border-color) hover:opacity-80"
                             />
                           </a>
                         ) : (
@@ -294,8 +294,8 @@ const TicketsAdmin = () => {
                       )}
 
                       {t.response && (
-                        <p className="mt-3 rounded bg-slate-800/80 px-3 py-2 text-sm text-slate-300">
-                          <span className="text-slate-500">Respuesta: </span>
+                        <p className="mt-3 rounded bg-(--hover-bg) px-3 py-2 text-sm text-(--muted-fg-2)">
+                          <span className="text-(--muted-fg)">Respuesta: </span>
                           {t.response}
                         </p>
                       )}
@@ -307,7 +307,7 @@ const TicketsAdmin = () => {
                             onChange={(e) => setResponseText(e.target.value)}
                             placeholder="Escribe la respuesta/solución para el usuario…"
                             rows={3}
-                            className="w-full rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
+                            className="w-full rounded-md border border-(--input-border) bg-(--input-bg) px-3 py-2 text-sm text-(--input-fg) placeholder:text-(--muted-fg)"
                           />
                           <div className="flex gap-2">
                             <Button

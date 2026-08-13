@@ -130,11 +130,11 @@ const TicketsSection = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm text-slate-400">Tipo de ticket *</label>
+              <label className="mb-1 block text-sm text-(--muted-fg)">Tipo de ticket *</label>
               <select
                 value={form.type}
                 onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
-                className="w-full rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="w-full rounded-md border border-(--input-border) bg-(--input-bg) px-3 py-2 text-sm text-(--input-fg)"
               >
                 <option value="">Selecciona un tipo…</option>
                 {Object.entries(TICKET_TYPE_LABELS).map(([value, label]) => (
@@ -144,7 +144,7 @@ const TicketsSection = () => {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm text-slate-400">Título *</label>
+              <label className="mb-1 block text-sm text-(--muted-fg)">Título *</label>
               <Input
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
@@ -154,28 +154,28 @@ const TicketsSection = () => {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm text-slate-400">Descripción</label>
+              <label className="mb-1 block text-sm text-(--muted-fg)">Descripción</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 placeholder="Cuéntanos qué pasó: qué estabas haciendo, qué esperabas que ocurriera y qué ocurrió."
                 rows={4}
-                className="w-full rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
+                className="w-full rounded-md border border-(--input-border) bg-(--input-bg) px-3 py-2 text-sm text-(--input-fg) placeholder:text-(--muted-fg)"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm text-slate-400">
+              <label className="mb-1 block text-sm text-(--muted-fg)">
                 Captura de pantalla (opcional)
               </label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                className="w-full cursor-pointer rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-400 file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-slate-700 file:px-3 file:py-1 file:text-xs file:text-slate-200"
+                className="w-full cursor-pointer rounded-md border border-(--input-border) bg-(--input-bg) px-3 py-2 text-sm text-(--muted-fg) file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-(--hover-bg) file:px-3 file:py-1 file:text-xs file:text-(--muted-fg-2)"
               />
               {imageFile && (
-                <p className="mt-1 flex items-center gap-2 text-xs text-slate-400">
+                <p className="mt-1 flex items-center gap-2 text-xs text-(--muted-fg)">
                   📎 {imageFile.name} ({(imageFile.size / 1024).toFixed(0)} KB)
                   <button
                     type="button"
@@ -189,7 +189,7 @@ const TicketsSection = () => {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm text-slate-400">
+              <label className="mb-1 block text-sm text-(--muted-fg)">
                 Link de video (opcional)
               </label>
               <Input
@@ -212,7 +212,7 @@ const TicketsSection = () => {
             <Button type="submit" disabled={sending}>
               {sending ? 'Enviando…' : 'Enviar ticket'}
             </Button>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-(--muted-fg)">
               La fecha, hora, tu usuario y unidad de negocio se registran automáticamente.
             </p>
           </form>
@@ -220,14 +220,14 @@ const TicketsSection = () => {
           {/* Active tickets list */}
           <div>
             <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-medium text-slate-300">
+              <p className="text-sm font-medium text-(--muted-fg-2)">
                 {showResolved ? 'Todos mis tickets' : 'Mis tickets activos'}
               </p>
               {resolvedCount > 0 && (
                 <button
                   type="button"
                   onClick={() => setShowResolved((v) => !v)}
-                  className="text-xs text-slate-400 underline hover:text-slate-200"
+                  className="text-xs text-(--muted-fg) underline hover:text-(--app-fg)"
                 >
                   {showResolved ? 'Ocultar resueltos' : `Ver resueltos (${resolvedCount})`}
                 </button>
@@ -235,9 +235,9 @@ const TicketsSection = () => {
             </div>
 
             {loading ? (
-              <p className="text-sm text-slate-400">Cargando tickets…</p>
+              <p className="text-sm text-(--muted-fg)">Cargando tickets…</p>
             ) : visibleTickets.length === 0 ? (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-(--muted-fg)">
                 No tienes tickets {showResolved ? '' : 'activos '}por ahora.
               </p>
             ) : (
@@ -247,22 +247,22 @@ const TicketsSection = () => {
                   return (
                     <div
                       key={t._id}
-                      className="rounded-lg border border-slate-800 bg-slate-900/60 p-3"
+                      className="rounded-lg border border-(--border-color) bg-(--input-bg) p-3"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-medium text-slate-100">{t.title}</p>
+                        <p className="text-sm font-medium text-(--app-fg)">{t.title}</p>
                         <span
                           className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${statusMeta.className}`}
                         >
                           {statusMeta.label}
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-(--muted-fg)">
                         {TICKET_TYPE_LABELS[t.type] || t.type} · {formatDateTime(t.createdAt)}
                       </p>
                       {t.response && (
-                        <p className="mt-2 rounded bg-slate-800/80 px-2 py-1 text-xs text-slate-300">
-                          <span className="text-slate-500">Respuesta: </span>
+                        <p className="mt-2 rounded bg-(--hover-bg) px-2 py-1 text-xs text-(--muted-fg-2)">
+                          <span className="text-(--muted-fg)">Respuesta: </span>
                           {t.response}
                         </p>
                       )}
