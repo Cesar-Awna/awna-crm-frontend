@@ -14,6 +14,7 @@ import PaginationControls from '../../../components/PaginationControls.jsx';
 import LeadImportModal from '../../../components/LeadImportModal.jsx';
 import { useBU } from '../../../contexts/BUContext.jsx';
 import { getStoredSession } from '../../../lib/session.js';
+import DateRangePicker from '../../../components/DateRangePicker.jsx';
 
 const FIELD_ALIASES = {
   rutEmpresa:     ['rut'],
@@ -866,22 +867,20 @@ const AdminLeads = () => {
             {/* Fila 2: filtros de fecha */}
             <div className="flex flex-wrap items-end gap-6">
               <div className="flex flex-col gap-1">
-                <span className="text-xs text-slate-400">Ingreso desde / hasta</span>
-                <div className="flex gap-2">
-                  <input type="date" className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
-                    value={leadFilters.createdAtFrom} onChange={(e) => setLeadFilters((f) => ({ ...f, createdAtFrom: e.target.value }))} />
-                  <input type="date" className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
-                    value={leadFilters.createdAtTo} onChange={(e) => setLeadFilters((f) => ({ ...f, createdAtTo: e.target.value }))} />
-                </div>
+                <span className="text-xs text-slate-400">Fecha de ingreso</span>
+                <DateRangePicker
+                  value={{ from: leadFilters.createdAtFrom, to: leadFilters.createdAtTo }}
+                  onChange={(r) => setLeadFilters((f) => ({ ...f, createdAtFrom: r.from, createdAtTo: r.to }))}
+                  placeholder="Todas las fechas"
+                />
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-xs text-slate-400">Cierre desde / hasta</span>
-                <div className="flex gap-2">
-                  <input type="date" className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
-                    value={leadFilters.closedAtFrom} onChange={(e) => setLeadFilters((f) => ({ ...f, closedAtFrom: e.target.value }))} />
-                  <input type="date" className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
-                    value={leadFilters.closedAtTo} onChange={(e) => setLeadFilters((f) => ({ ...f, closedAtTo: e.target.value }))} />
-                </div>
+                <span className="text-xs text-slate-400">Fecha de cierre</span>
+                <DateRangePicker
+                  value={{ from: leadFilters.closedAtFrom, to: leadFilters.closedAtTo }}
+                  onChange={(r) => setLeadFilters((f) => ({ ...f, closedAtFrom: r.from, closedAtTo: r.to }))}
+                  placeholder="Todas las fechas"
+                />
               </div>
             </div>
           </CardContent>

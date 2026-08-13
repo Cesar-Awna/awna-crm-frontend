@@ -7,6 +7,7 @@ import LeadsService from '../../../services/Leads.js';
 import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import { getStoredSession } from '../../../lib/session.js';
 import { exportCSV } from '../../../utils/exportCSV.js';
+import DateRangePicker from '../../../components/DateRangePicker.jsx';
 import {
   LEAD_STATUSES,
   getStatusLabel,
@@ -40,6 +41,7 @@ const Leads = () => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('kanban');
   const [filterStatus, setFilterStatus] = useState('');
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [search, setSearch] = useState('');
   const [buSchema, setBuSchema] = useState([]);
   const [pipelineStages, setPipelineStages] = useState([]);
@@ -73,6 +75,8 @@ const Leads = () => {
       setLoading(true);
       try {
         const params = { status: filterStatus || undefined, limit: 1000, sort: '-updatedAt' };
+        if (dateRange.from) params.createdAtFrom = dateRange.from;
+        if (dateRange.to) params.createdAtTo = dateRange.to;
         if (_ownerUserId) params.ownerUserId = _ownerUserId;
         const [leadsRes, statsRes] = await Promise.all([
           LeadsService.getAll(params),
@@ -95,7 +99,7 @@ const Leads = () => {
       }
     };
     loadData();
-  }, [filterStatus]);
+  }, [filterStatus, dateRange]);
 
   const handleChangeStatus = async (leadId, newStatus) => {
     try {
@@ -229,6 +233,12 @@ const Leads = () => {
               Lista
             </button>
           </div>
+
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+            placeholder="Todas las fechas de ingreso"
+          />
 
           {viewMode === 'list' && (
             <>

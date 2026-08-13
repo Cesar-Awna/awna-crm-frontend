@@ -188,3 +188,21 @@
   }
 }
 
+
+/* Date range picker (react-day-picker) — theme-aware.
+   Doble clase para ganar especificidad sobre las vars que define la librería en .rdp-root */
+.rdp-root.crm-daypicker {
+  --rdp-accent-color: #10b981;
+  --rdp-accent-background-color: rgba(16, 185, 129, 0.18);
+  --rdp-today-color: #10b981;
+  --rdp-range_start-color: #022c22;
+  --rdp-range_end-color: #022c22;
+  color: var(--app-fg);
+  font-size: 0.85rem;
+}
+.crm-daypicker .rdp-dropdown {
+  background-color: var(--input-bg);
+  color: var(--input-fg);
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+}
