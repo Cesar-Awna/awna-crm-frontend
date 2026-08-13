@@ -531,49 +531,6 @@ const NewLeadV2 = () => {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader><CardTitle>Contadores de actividad</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    {buActivityTypes.length > 0
-                      ? buActivityTypes.filter((a) => a.key !== 'NOTE_ADDED').map(({ key, label }) => (
-                          <div key={key}>
-                            <label className="mb-1 block text-sm text-(--muted-fg)">{label}</label>
-                            <Input
-                              type="number"
-                              min="0"
-                              value={f.activityCounts?.[key] ?? 0}
-                              onChange={(e) => setField('activityCounts', {
-                                ...(f.activityCounts || {}),
-                                [key]: Math.max(0, parseInt(e.target.value, 10) || 0),
-                              })}
-                            />
-                          </div>
-                        ))
-                      : [
-                          { key: 'callCount',           label: 'Llamadas realizadas'   },
-                          { key: 'contactSuccessCount',  label: 'Contactos efectivos'   },
-                          { key: 'followupCount',        label: 'Seguimientos'          },
-                          { key: 'whatsappSentCount',    label: 'WhatsApp enviados'     },
-                          { key: 'emailSentCount',       label: 'Correos enviados'      },
-                          { key: 'quoteSentCount',       label: 'Cotizaciones enviadas' },
-                          { key: 'rescheduleCount',      label: 'Reagendamientos'       },
-                        ].map(({ key, label }) => (
-                          <div key={key}>
-                            <label className="mb-1 block text-sm text-(--muted-fg)">{label}</label>
-                            <Input
-                              type="number"
-                              min="0"
-                              value={f[key]}
-                              onChange={(e) => setField(key, Math.max(0, parseInt(e.target.value, 10) || 0))}
-                            />
-                          </div>
-                        ))
-                    }
-                  </div>
-                </CardContent>
-              </Card>
-
               <div className="flex justify-end">
                 <Button type="submit" disabled={loading}>
                   {loading ? 'Guardando…' : 'Guardar cambios'}
