@@ -34,6 +34,7 @@ const TicketsSection = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [imageFile, setImageFile] = useState(null);
   const [sending, setSending] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [showResolved, setShowResolved] = useState(false);
@@ -72,16 +73,33 @@ const TicketsSection = () => {
       return;
     }
 
+    if (imageFile && imageFile.size > 8 * 1024 * 1024) {
+      setFeedback({ type: 'error', text: 'La imagen supera el máximo de 8MB.' });
+      return;
+    }
+
     setSending(true);
     try {
-      const res = await TicketsService.create({
-        type: form.type,
-        title: form.title.trim(),
-        description: form.description.trim(),
-        evidenceUrl: form.evidenceUrl.trim(),
-      });
+      let payload;
+      if (imageFile) {
+        payload = new FormData();
+        payload.append('type', form.type);
+        payload.append('title', form.title.trim());
+        payload.append('description', form.description.trim());
+        payload.append('evidenceUrl', form.evidenceUrl.trim());
+        payload.append('image', imageFile);
+      } else {
+        payload = {
+          type: form.type,
+          title: form.title.trim(),
+          description: form.description.trim(),
+          evidenceUrl: form.evidenceUrl.trim(),
+        };
+      }
+      const res = await TicketsService.create(payload);
       if (res?.success) {
         setForm(EMPTY_FORM);
+        setImageFile(null);
         setFeedback({ type: 'success', text: 'Ticket enviado. Te avisaremos cuando sea resuelto.' });
         await loadTickets();
       } else {
@@ -148,7 +166,31 @@ const TicketsSection = () => {
 
             <div>
               <label className="mb-1 block text-sm text-slate-400">
-                Link de video o captura (opcional)
+                Captura de pantalla (opcional)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                className="w-full cursor-pointer rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-400 file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-slate-700 file:px-3 file:py-1 file:text-xs file:text-slate-200"
+              />
+              {imageFile && (
+                <p className="mt-1 flex items-center gap-2 text-xs text-slate-400">
+                  📎 {imageFile.name} ({(imageFile.size / 1024).toFixed(0)} KB)
+                  <button
+                    type="button"
+                    onClick={() => setImageFile(null)}
+                    className="text-red-400 underline hover:text-red-300"
+                  >
+                    quitar
+                  </button>
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm text-slate-400">
+                Link de video (opcional)
               </label>
               <Input
                 value={form.evidenceUrl}

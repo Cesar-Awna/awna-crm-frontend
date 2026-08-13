@@ -266,14 +266,31 @@ const TicketsAdmin = () => {
                       )}
 
                       {t.evidenceUrl && (
-                        <a
-                          href={t.evidenceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 inline-block text-sm text-blue-400 underline hover:text-blue-300"
-                        >
-                          Ver evidencia (video/captura)
-                        </a>
+                        /\.(png|jpe?g|webp|gif)(\?|$)/i.test(t.evidenceUrl) ||
+                        t.evidenceUrl.includes('res.cloudinary.com') ? (
+                          <a
+                            href={t.evidenceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 block"
+                            title="Abrir imagen completa"
+                          >
+                            <img
+                              src={t.evidenceUrl}
+                              alt="Captura adjunta"
+                              className="max-h-48 rounded-md border border-slate-700 hover:opacity-80"
+                            />
+                          </a>
+                        ) : (
+                          <a
+                            href={t.evidenceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-block text-sm text-blue-400 underline hover:text-blue-300"
+                          >
+                            Ver evidencia (video)
+                          </a>
+                        )
                       )}
 
                       {t.response && (
