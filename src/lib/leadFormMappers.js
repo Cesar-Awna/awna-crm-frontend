@@ -126,17 +126,8 @@ export function buildLeadPayload(f, options = {}) {
 
   if (isEdit) {
     if (f.closedAt) payload.closedAt = f.closedAt;
-    if (f.activityCounts && Object.keys(f.activityCounts).length > 0) {
-      payload.activityCounts = f.activityCounts;
-    }
-    payload.callCount           = Number(f.callCount           ?? 0);
-    payload.contactSuccessCount = Number(f.contactSuccessCount ?? 0);
-    payload.followupCount       = Number(f.followupCount       ?? 0);
-    payload.whatsappSentCount   = Number(f.whatsappSentCount   ?? 0);
-    payload.emailSentCount      = Number(f.emailSentCount      ?? 0);
-    payload.quoteSentCount      = Number(f.quoteSentCount      ?? 0);
-    payload.rescheduleCount     = Number(f.rescheduleCount     ?? 0);
-    payload.closureCount        = Number(f.closureCount        ?? 0);
+    // Activity counters are server-owned (incremented by logActivity, rebuilt
+    // from the event log) — the form must never send them back.
   }
 
   if (!isEdit) {

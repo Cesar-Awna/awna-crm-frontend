@@ -154,9 +154,17 @@ const Leads = () => {
     const csvData = filteredLeads.map((lead) => {
       const row = {};
       cols.forEach((col) => { row[col.label] = getLeadField(lead, col.key); });
+      row['Fuente de lead']  = getLeadField(lead, 'fuenteLead');
       row['Estado']          = getStatusLabel(lead.status) || lead.status || '—';
       row['Ingreso']         = formatDate(lead.createdAt);
       row['Fecha de cierre'] = lead.closedAt ? formatDate(lead.closedAt) : '—';
+      row['Llamadas realizadas']   = lead.callCount ?? 0;
+      row['Contactos efectivos']   = lead.contactSuccessCount ?? 0;
+      row['Seguimientos']          = lead.followupCount ?? 0;
+      row['WhatsApp enviados']     = lead.whatsappSentCount ?? 0;
+      row['Correos enviados']      = lead.emailSentCount ?? 0;
+      row['Cotizaciones enviadas'] = lead.quoteSentCount ?? 0;
+      row['Reagendamientos']       = lead.rescheduleCount ?? 0;
       return row;
     });
     exportCSV(csvData, `mis-leads-${new Date().toISOString().split('T')[0]}.csv`);
