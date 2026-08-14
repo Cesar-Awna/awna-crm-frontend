@@ -50,13 +50,15 @@ const Reports = () => {
   const [activityUserId, setActivityUserId] = useState('');
   const [exportLeadsLoading, setExportLeadsLoading] = useState(false);
   const [productOptions, setProductOptions] = useState([]);
+  const [fuenteOptions, setFuenteOptions] = useState([]);
 
   useEffect(() => {
-    if (!leadsFilters.businessUnitId) { setProductOptions([]); return; }
+    if (!leadsFilters.businessUnitId) { setProductOptions([]); setFuenteOptions([]); return; }
     BusinessUnitsService.getSchema(leadsFilters.businessUnitId)
       .then((res) => {
         if (!res?.success) return;
         const field = (res.data?.leadSchema || []).find((f) => f.key === 'productoCotizado');
+        setFuenteOptions((res.data?.leadSchema || []).find((f) => f.key === 'fuenteLead')?.options || []);
         setProductOptions(field?.options || []);
       })
       .catch(() => setProductOptions([]));
@@ -320,7 +322,7 @@ const Reports = () => {
                     className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                   >
                     <option value="">Todas las fuentes</option>
-                    {['Ads', 'Apolo', 'Referido', 'Otro'].map((o) => (
+                    {(fuenteOptions.length > 0 ? fuenteOptions : ['Ads', 'Apolo', 'Referido', 'Otro', 'Base Equifax']).map((o) => (
                       <option key={o} value={o}>{o}</option>
                     ))}
                   </select>

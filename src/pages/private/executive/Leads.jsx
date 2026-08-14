@@ -41,6 +41,8 @@ const Leads = () => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('kanban');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterFuente, setFilterFuente] = useState('');
+  const [filterProducto, setFilterProducto] = useState('');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [search, setSearch] = useState('');
   const [buSchema, setBuSchema] = useState([]);
@@ -75,6 +77,8 @@ const Leads = () => {
       setLoading(true);
       try {
         const params = { status: filterStatus || undefined, limit: 1000, sort: '-updatedAt' };
+        if (filterFuente) params.fuenteLead = filterFuente;
+        if (filterProducto) params.productoCotizado = filterProducto;
         if (dateRange.from) params.createdAtFrom = dateRange.from;
         if (dateRange.to) params.createdAtTo = dateRange.to;
         if (_ownerUserId) params.ownerUserId = _ownerUserId;
@@ -99,7 +103,7 @@ const Leads = () => {
       }
     };
     loadData();
-  }, [filterStatus, dateRange]);
+  }, [filterStatus, filterFuente, filterProducto, dateRange]);
 
   const handleChangeStatus = async (leadId, newStatus) => {
     try {
@@ -136,6 +140,19 @@ const Leads = () => {
         .sort((a, b) => a.order - b.order)
         .map((s) => ({ value: s.key, label: s.label, color: s.color }))
       : LEAD_STATUSES.map((s) => ({ ...s, color: STATUS_COLORS[s.value] }));
+
+  // Filter options from the BU schema (includes dynamic values like "Base Equifax")
+  const fuenteOptions = buSchema.find((f) => f.key === 'fuenteLead')?.options || [];
+  const productoOptions = buSchema.find((f) => f.key === 'productoCotizado')?.options || [];
+  const hasActiveFilters = filterStatus || filterFuente || filterProducto || dateRange.from || search;
+
+  const handleClearFilters = () => {
+    setFilterStatus('');
+    setFilterFuente('');
+    setFilterProducto('');
+    setDateRange({ from: '', to: '' });
+    setSearch('');
+  };
 
   // Columns to show per lead in list and kanban
   const inlineFields = buSchema.filter((f) => f.type !== 'textarea');
@@ -248,29 +265,54 @@ const Leads = () => {
             placeholder="Todas las fechas de ingreso"
           />
 
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
+          >
+            <option value="">Todos los estados</option>
+            {stages.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+
+          {fuenteOptions.length > 0 && (
+            <select
+              value={filterFuente}
+              onChange={(e) => setFilterFuente(e.target.value)}
+              className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
+            >
+              <option value="">Todas las fuentes</option>
+              {fuenteOptions.map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          )}
+
+          {productoOptions.length > 0 && (
+            <select
+              value={filterProducto}
+              onChange={(e) => setFilterProducto(e.target.value)}
+              className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
+            >
+              <option value="">Todos los productos</option>
+              {productoOptions.map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          )}
+
           {viewMode === 'list' && (
-            <>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
-              >
-                <option value="">Todos los estados</option>
-                {stages.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleExportCSV}
-                disabled={filteredLeads.length === 0}
-              >
-                Exportar Excel
-              </Button>
-            </>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleExportCSV}
+              disabled={filteredLeads.length === 0}
+            >
+              Exportar Excel
+            </Button>
           )}
 
           <input
@@ -280,6 +322,12 @@ const Leads = () => {
             placeholder="Buscar lead…"
             className="min-w-[280px] flex-1 rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
           />
+
+          {hasActiveFilters && (
+            <Button type="button" variant="outline" onClick={handleClearFilters}>
+              Limpiar filtros
+            </Button>
+          )}
         </div>
 
         {loading ? (

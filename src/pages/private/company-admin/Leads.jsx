@@ -106,16 +106,18 @@ const AdminLeads = () => {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [productOptions, setProductOptions] = useState([]);
+  const [fuenteOptions, setFuenteOptions] = useState([]);
 
   useEffect(() => {
-    if (!leadFilters.businessUnitId) { setProductOptions([]); return; }
+    if (!leadFilters.businessUnitId) { setProductOptions([]); setFuenteOptions([]); return; }
     BusinessUnitsService.getSchema(leadFilters.businessUnitId)
       .then((res) => {
         if (!res?.success) return;
-        const field = (res.data?.leadSchema || []).find((f) => f.key === 'productoCotizado');
-        setProductOptions(field?.options || []);
+        const schema = res.data?.leadSchema || [];
+        setProductOptions(schema.find((f) => f.key === 'productoCotizado')?.options || []);
+        setFuenteOptions(schema.find((f) => f.key === 'fuenteLead')?.options || []);
       })
-      .catch(() => setProductOptions([]));
+      .catch(() => { setProductOptions([]); setFuenteOptions([]); });
   }, [leadFilters.businessUnitId]);
   const pagination = usePagination(saved?.page || 1, 100);
 
@@ -837,7 +839,7 @@ const AdminLeads = () => {
                 onChange={(e) => setLeadFilters((f) => ({ ...f, fuenteLead: e.target.value }))}
               >
                 <option value="">Todas las fuentes</option>
-                {['Ads', 'Apolo', 'Referido', 'Otro'].map((o) => (
+                {(fuenteOptions.length > 0 ? fuenteOptions : ['Ads', 'Apolo', 'Referido', 'Otro', 'Base Equifax']).map((o) => (
                   <option key={o} value={o}>{o}</option>
                 ))}
               </select>
