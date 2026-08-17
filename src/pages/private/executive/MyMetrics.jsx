@@ -257,20 +257,24 @@ const MyMetrics = () => {
               </CardHeader>
               <CardContent>
                 {totalLeads > 0 && (
-                  <div className="mb-4 flex h-2 w-full overflow-hidden rounded-full">
+                  <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                     {displayStages.map((s) => {
                       const count = byStatus[s.key] || 0;
                       if (!count) return null;
                       const color = s.color || getStageColor(s.key);
+                      const pct = ((count / totalLeads) * 100).toFixed(1).replace('.0', '');
                       return (
                         <div
                           key={s.key}
-                          title={`${s.label}: ${count}`}
-                          style={{
-                            width: `${(count / totalLeads) * 100}%`,
-                            backgroundColor: color,
-                          }}
-                        />
+                          className="rounded-md border border-(--border-color) bg-(--input-bg) px-3 py-2"
+                          style={{ borderLeft: `3px solid ${color}` }}
+                        >
+                          <p className="truncate text-xs text-(--muted-fg)" title={s.label}>{s.label}</p>
+                          <p className="text-base font-semibold text-(--app-fg)">
+                            {pct}%{' '}
+                            <span className="text-xs font-normal text-(--muted-fg)">({count})</span>
+                          </p>
+                        </div>
                       );
                     })}
                   </div>
@@ -316,8 +320,8 @@ const MyMetrics = () => {
                         onClick={() => setActivityPeriod(p.value)}
                         className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
                           activityPeriod === p.value
-                            ? 'bg-slate-600 text-slate-100'
-                            : 'text-slate-400 hover:text-slate-300'
+                            ? 'bg-emerald-500 text-slate-950'
+                            : 'text-(--muted-fg) hover:text-(--app-fg)'
                         }`}
                       >
                         {p.label}

@@ -227,20 +227,26 @@ const MyDay = () => {
                 <CardTitle>Mis leads por estado</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Stacked bar */}
+                {/* Per-status cards with percentage */}
                 {totalLeads > 0 && (
-                  <div className="mb-4 flex h-2 w-full overflow-hidden rounded-full">
+                  <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                     {statusEntries.map(([key, count]) => {
                       if (!count) return null;
+                      const pct = ((count / totalLeads) * 100).toFixed(1).replace('.0', '');
                       return (
                         <div
                           key={key}
-                          title={`${getStatusLabel(key) || key}: ${count}`}
-                          style={{
-                            width: `${(count / totalLeads) * 100}%`,
-                            backgroundColor: statusColorMap[key] || '#94a3b8',
-                          }}
-                        />
+                          className="rounded-md border border-(--border-color) bg-(--input-bg) px-3 py-2"
+                          style={{ borderLeft: `3px solid ${statusColorMap[key] || '#94a3b8'}` }}
+                        >
+                          <p className="truncate text-xs text-(--muted-fg)" title={getStatusLabel(key) || key}>
+                            {getStatusLabel(key) || key}
+                          </p>
+                          <p className="text-base font-semibold text-(--app-fg)">
+                            {pct}%{' '}
+                            <span className="text-xs font-normal text-(--muted-fg)">({count})</span>
+                          </p>
+                        </div>
                       );
                     })}
                   </div>
