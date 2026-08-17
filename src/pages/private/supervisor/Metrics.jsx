@@ -311,8 +311,8 @@ const SupervisorMetrics = () => {
                         key={p.value}
                         onClick={() => setActivityPeriod(p.value)}
                         className={`rounded px-2 py-1 text-xs font-medium transition-colors ${activityPeriod === p.value
-                            ? 'bg-slate-600 text-slate-100'
-                            : 'text-slate-400 hover:text-slate-300'
+                            ? 'bg-emerald-500 text-slate-950'
+                            : 'text-(--muted-fg) hover:text-(--app-fg)'
                           }`}
                       >
                         {p.label}

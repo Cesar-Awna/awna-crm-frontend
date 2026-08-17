@@ -17,7 +17,6 @@ const AdminRanking = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [businessUnits, setBusinessUnits] = useState([]);
-  const [filterBU, setFilterBU] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -95,14 +94,9 @@ const AdminRanking = () => {
       (r) => r.periodStart === latestPeriod && executiveIds.has(String(r.userId))
     );
 
-    // Filter by business unit if selected
-    if (filterBU) {
-      filtered = filtered.filter((r) => String(r.businessUnitId) === filterBU);
-    }
-
     // Sort by totalScore descending
     return filtered.sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
-  }, [rankings, filterBU]);
+  }, [rankings]);
 
   const latestPeriodLabel = useMemo(() => {
     if (!currentPeriodRankings.length) return '';
@@ -149,37 +143,16 @@ const AdminRanking = () => {
           ))}
         </div>
 
-        {/* Filter by BU */}
-        <Card className="mb-6">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-4">
-              <label className="text-sm text-slate-400">Filtrar por unidad:</label>
-              <select
-                className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
-                value={filterBU}
-                onChange={(e) => setFilterBU(e.target.value)}
-              >
-                <option value="">Todas las unidades</option>
-                {businessUnits.map((bu) => (
-                  <option key={bu._id} value={bu._id}>
-                    {bu.code} — {bu.name}
-                  </option>
-                ))}
-              </select>
-              {latestPeriodLabel && (
-                <span className="ml-auto text-xs text-slate-500">
-                  Período: {latestPeriodLabel}
-                </span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Leaderboard */}
         <Card>
           <CardHeader>
             <CardTitle>
               Leaderboard {periodType === 'WEEK' ? 'Semanal' : 'Mensual'}
+              {latestPeriodLabel && (
+                <span className="ml-2 text-sm font-normal text-slate-500">
+                  · {latestPeriodLabel}
+                </span>
+              )}
               <span className="ml-2 text-sm font-normal text-slate-400">
                 ({currentPeriodRankings.length} ejecutivos)
               </span>
