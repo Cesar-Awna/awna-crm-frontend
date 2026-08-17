@@ -653,6 +653,23 @@ const NewLeadV2 = () => {
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="group inline-block"
+                                      onClick={(e) => {
+                                        // Cloudinary bloquea la entrega directa de PDFs (401):
+                                        // pedimos un enlace temporal firmado al backend.
+                                        if (!ev.metadata?.filePublicId) return;
+                                        e.preventDefault();
+                                        const w = window.open('', '_blank');
+                                        LeadsService.getAttachmentUrl(ev._id)
+                                          .then((res) => {
+                                            if (res?.success && res.data?.url) {
+                                              if (w) w.location = res.data.url;
+                                              else window.location.href = res.data.url;
+                                            } else if (w) {
+                                              w.location = attachUrl;
+                                            }
+                                          })
+                                          .catch(() => { if (w) w.location = attachUrl; });
+                                      }}
                                     >
                                       {thumbUrl ? (
                                         <img
