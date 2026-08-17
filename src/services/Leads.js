@@ -22,6 +22,7 @@ class LeadsService {
   });
   dismissFollowup = (id) => instance.patch(`/api/leads/${id}/dismiss-followup`);
   getEvents = (id) => instance.get(`/api/leads/${id}/events`);
+  getAttachmentUrl = (eventId) => instance.get(`/api/leads/events/${eventId}/attachment`);
   deleteLead = (id) => instance.delete(`/api/leads/${id}`);
 }
 
