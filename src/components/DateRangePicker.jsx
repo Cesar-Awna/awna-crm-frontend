@@ -93,18 +93,28 @@ const DateRangePicker = ({ value = { from: '', to: '' }, onChange, placeholder =
     : placeholder;
 
   return (
-    <div className="relative" ref={panelRef}>
+    <div className="relative flex" ref={panelRef}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`flex h-10 items-center gap-2 rounded-md border border-(--input-border) bg-(--input-bg) px-3 text-sm ${
-          value.from ? 'text-(--input-fg)' : 'text-(--muted-fg)'
+        className={`flex h-10 items-center gap-2 border border-(--input-border) bg-(--input-bg) px-3 text-sm ${
+          value.from ? 'rounded-l-md text-(--input-fg)' : 'rounded-md text-(--muted-fg)'
         }`}
       >
         <span>📅</span>
         <span>{buttonLabel}</span>
         <span className="text-xs text-(--muted-fg)">▾</span>
       </button>
+      {value.from && (
+        <button
+          type="button"
+          onClick={handleClear}
+          title="Quitar filtro de fecha"
+          className="flex h-10 items-center rounded-r-md border border-l-0 border-(--input-border) bg-(--input-bg) px-2.5 text-sm text-(--muted-fg) hover:bg-(--hover-bg) hover:text-red-400"
+        >
+          ✕
+        </button>
+      )}
 
       {open && (
         <div className="absolute left-0 top-12 z-50 flex flex-col gap-0 rounded-lg border border-(--border-color) bg-(--panel-bg) shadow-2xl backdrop-blur-xl sm:flex-row">
