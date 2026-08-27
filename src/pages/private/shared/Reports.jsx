@@ -9,6 +9,7 @@ import UsersService from '../../../services/Users.js';
 import { usePagination } from '../../../hooks/usePagination.js';
 import PaginationControls from '../../../components/PaginationControls.jsx';
 import { exportCSV } from '../../../utils/exportCSV.js';
+import { fetchHitosColumn } from '../../../utils/hitosExport.js';
 
 const STATUS_COLORS = {
   NUEVO: '#38bdf8',
@@ -189,6 +190,7 @@ const Reports = () => {
         if (res.data.length < 100) break;
         page++;
       }
+      const hitos = await fetchHitosColumn(allLeads);
       const f = (lead, key) => lead?.fields?.[key] ?? lead?.[key] ?? '—';
       const csvData = allLeads.map((lead) => ({
         'Razón Social': f(lead, 'razonSocial'),
@@ -213,6 +215,7 @@ const Reports = () => {
         'Correos enviados': lead.emailSentCount ?? 0,
         'Cotizaciones enviadas': lead.quoteSentCount ?? 0,
         'Reagendamientos': lead.rescheduleCount ?? 0,
+        'Hitos': hitos[String(lead._id)] || '',
       }));
       exportCSV(csvData, `reporte-leads-${new Date().toISOString().split('T')[0]}.csv`);
     } finally {

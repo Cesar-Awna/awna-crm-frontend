@@ -15,6 +15,7 @@ import LeadImportModal from '../../../components/LeadImportModal.jsx';
 import { useBU } from '../../../contexts/BUContext.jsx';
 import { getStoredSession } from '../../../lib/session.js';
 import DateRangePicker from '../../../components/DateRangePicker.jsx';
+import { fetchHitosColumn } from '../../../utils/hitosExport.js';
 
 const FIELD_ALIASES = {
   rutEmpresa:     ['rut'],
@@ -485,6 +486,7 @@ const AdminLeads = () => {
             { key: 'telefono',       label: 'Teléfono' },
             { key: 'correo',         label: 'Correo' },
           ];
+      const hitos = await fetchHitosColumn(allLeads);
       const csvData = allLeads.map((lead) => {
         const row = {};
         allCols.forEach((col) => { row[col.label] = getLeadField(lead, col.key); });
@@ -502,6 +504,7 @@ const AdminLeads = () => {
         row['Correos enviados']      = lead.emailSentCount ?? 0;
         row['Cotizaciones enviadas'] = lead.quoteSentCount ?? 0;
         row['Reagendamientos']       = lead.rescheduleCount ?? 0;
+        row['Hitos']                 = hitos[String(lead._id)] || '';
         return row;
       });
       exportCSV(csvData, `leads-${new Date().toISOString().split('T')[0]}.csv`);

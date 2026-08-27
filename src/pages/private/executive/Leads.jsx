@@ -8,6 +8,7 @@ import BusinessUnitsService from '../../../services/BusinessUnits.js';
 import { getStoredSession } from '../../../lib/session.js';
 import { exportCSV } from '../../../utils/exportCSV.js';
 import DateRangePicker from '../../../components/DateRangePicker.jsx';
+import { fetchHitosColumn } from '../../../utils/hitosExport.js';
 import {
   LEAD_STATUSES,
   getStatusLabel,
@@ -161,7 +162,8 @@ const Leads = () => {
 
   const getLeadsByStatus = (status) => filteredLeads.filter((l) => l.status === status);
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
+    const hitos = await fetchHitosColumn(filteredLeads);
     const cols = listCols || [
       { key: 'razonSocial',    label: 'Razón Social' },
       { key: 'rutEmpresa',     label: 'RUT' },
@@ -182,6 +184,7 @@ const Leads = () => {
       row['Correos enviados']      = lead.emailSentCount ?? 0;
       row['Cotizaciones enviadas'] = lead.quoteSentCount ?? 0;
       row['Reagendamientos']       = lead.rescheduleCount ?? 0;
+      row['Hitos']                 = hitos[String(lead._id)] || '';
       return row;
     });
     exportCSV(csvData, `mis-leads-${new Date().toISOString().split('T')[0]}.csv`);
