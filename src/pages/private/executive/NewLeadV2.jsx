@@ -61,6 +61,18 @@ const schemaToEmptyForm = (schema) => {
   return base;
 };
 
+// Captura la ubicación del dispositivo (requiere HTTPS o localhost y permiso del usuario).
+const getCurrentLocation = () => new Promise((resolve, reject) => {
+  if (!navigator.geolocation) return reject(new Error('Tu dispositivo o navegador no soporta ubicación.'));
+  navigator.geolocation.getCurrentPosition(
+    (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
+    (err) => reject(new Error(err.code === 1
+      ? 'Debes permitir el acceso a tu ubicación para registrar esta actividad.'
+      : 'No se pudo obtener tu ubicación. Revisa el GPS e inténtalo de nuevo.')),
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+});
+
 const EVENT_ICONS = {
   CALL: '📞',
   CONTACT_SUCCESS: '✅',
@@ -273,23 +285,38 @@ const NewLeadV2 = () => {
     }
   };
 
+  const selectedActivityCfg = buActivityTypes.find((a) => a.key === activityType);
+  const activityRequiresLocation = Boolean(selectedActivityCfg?.requiresLocation);
+
   const handleLogActivity = async () => {
     if (!activityType) return;
     setActivityLoading(true);
     setError('');
     setSuccess('');
     try {
+      // Actividades de terreno: la ubicación es obligatoria (el servidor también lo exige)
+      let location;
+      if (activityRequiresLocation) {
+        try {
+          location = await getCurrentLocation();
+        } catch (geoErr) {
+          setError(geoErr.message);
+          return;
+        }
+      }
       let res;
       if (activityFile) {
         const fd = new FormData();
         fd.append('eventType', activityType);
         if (activityNote.trim()) fd.append('note', activityNote.trim());
+        if (location) fd.append('location', JSON.stringify(location));
         fd.append('file', activityFile);
         res = await LeadsService.logActivityWithFile(leadId, fd);
       } else {
         res = await LeadsService.logActivity(leadId, {
           eventType: activityType,
           note: activityNote.trim() || undefined,
+          ...(location ? { location } : {}),
         });
       }
       if (res?.success) {
@@ -609,6 +636,11 @@ const NewLeadV2 = () => {
                       {activityLoading ? 'Registrando…' : 'Registrar'}
                     </Button>
                   </div>
+                  {activityRequiresLocation && (
+                    <p className="text-xs text-(--muted-fg)">
+                      📍 Al registrar esta actividad se guardará la ubicación de tu dispositivo (obligatorio).
+                    </p>
+                  )}
                   {activityType === 'QUOTE_SENT' && (
                     <div className="rounded-md border border-dashed border-[var(--input-border)] bg-[var(--input-bg)] p-3">
                       <label className="mb-1 block text-xs text-(--muted-fg)">Adjuntar cotización (PDF)</label>
@@ -638,6 +670,17 @@ const NewLeadV2 = () => {
                               <p className="text-sm font-medium">{getActivityLabel(ev.eventType, buActivityTypes)}</p>
                               {ev.metadata?.note && (
                                 <p className="mt-0.5 text-xs text-(--muted-fg)">{ev.metadata.note}</p>
+                              )}
+                              {Number.isFinite(Number(ev.metadata?.location?.lat)) && (
+                                <a
+                                  href={`https://www.google.com/maps?q=${ev.metadata.location.lat},${ev.metadata.location.lng}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300"
+                                >
+                                  📍 Ubicación registrada
+                                  {ev.metadata.location.accuracy ? ` (±${ev.metadata.location.accuracy} m)` : ''} · Ver en mapa
+                                </a>
                               )}
                               {(ev.metadata?.signedUrl || ev.metadata?.fileUrl) && (() => {
                                 const attachUrl = ev.metadata.signedUrl || ev.metadata.fileUrl;
