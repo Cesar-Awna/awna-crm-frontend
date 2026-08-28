@@ -66,12 +66,30 @@ const getCurrentLocation = () => new Promise((resolve, reject) => {
   if (!navigator.geolocation) return reject(new Error('Tu dispositivo o navegador no soporta ubicación.'));
   navigator.geolocation.getCurrentPosition(
     (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
-    (err) => reject(new Error(err.code === 1
-      ? 'Debes permitir el acceso a tu ubicación para registrar esta actividad.'
-      : 'No se pudo obtener tu ubicación. Revisa el GPS e inténtalo de nuevo.')),
+    (err) => {
+      const e = new Error(err.code === 1
+        ? 'Debes permitir el acceso a tu ubicación para registrar esta actividad.'
+        : 'No se pudo obtener tu ubicación. Revisa el GPS e inténtalo de nuevo.');
+      e.code = err.code;
+      reject(e);
+    },
     { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
   );
 });
+
+const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+
+// Estado del permiso de ubicación: 'granted' | 'prompt' | 'denied' | 'unknown'
+const queryGeoPermission = async () => {
+  try {
+    if (!navigator.permissions?.query) return 'unknown';
+    const st = await navigator.permissions.query({ name: 'geolocation' });
+    return st.state || 'unknown';
+  } catch {
+    return 'unknown';
+  }
+};
 
 const EVENT_ICONS = {
   CALL: '📞',
@@ -111,6 +129,7 @@ const NewLeadV2 = () => {
   const [activityNote, setActivityNote] = useState('');
   const [activityFile, setActivityFile] = useState(null);
   const [activityLoading, setActivityLoading] = useState(false);
+  const [geoPermission, setGeoPermission] = useState('unknown');
   const [hitoText, setHitoText] = useState('');
   const [hitoLoading, setHitoLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -288,6 +307,26 @@ const NewLeadV2 = () => {
   const selectedActivityCfg = buActivityTypes.find((a) => a.key === activityType);
   const activityRequiresLocation = Boolean(selectedActivityCfg?.requiresLocation);
 
+  useEffect(() => {
+    if (!activityRequiresLocation) return;
+    let cancelled = false;
+    queryGeoPermission().then((st) => { if (!cancelled) setGeoPermission(st); });
+    return () => { cancelled = true; };
+  }, [activityRequiresLocation]);
+
+  // Dispara la pregunta de permiso del navegador (solo funciona si aún no fue negado)
+  const handleActivateLocation = async () => {
+    setError('');
+    try {
+      await getCurrentLocation();
+      setGeoPermission('granted');
+      setSuccess('Ubicación activada. Ya puedes registrar la actividad.');
+    } catch (geoErr) {
+      if (geoErr.code === 1) setGeoPermission('denied');
+      else setError(geoErr.message);
+    }
+  };
+
   const handleLogActivity = async () => {
     if (!activityType) return;
     setActivityLoading(true);
@@ -299,7 +338,9 @@ const NewLeadV2 = () => {
       if (activityRequiresLocation) {
         try {
           location = await getCurrentLocation();
+          setGeoPermission('granted');
         } catch (geoErr) {
+          if (geoErr.code === 1) setGeoPermission('denied');
           setError(geoErr.message);
           return;
         }
@@ -636,10 +677,48 @@ const NewLeadV2 = () => {
                       {activityLoading ? 'Registrando…' : 'Registrar'}
                     </Button>
                   </div>
-                  {activityRequiresLocation && (
-                    <p className="text-xs text-(--muted-fg)">
-                      📍 Al registrar esta actividad se guardará la ubicación de tu dispositivo (obligatorio).
-                    </p>
+                  {activityRequiresLocation && geoPermission !== 'denied' && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-xs text-(--muted-fg)">
+                        📍 Al registrar esta actividad se guardará la ubicación de tu dispositivo (obligatorio).
+                        {geoPermission === 'granted' && <span className="ml-1 text-emerald-400">Ubicación activada ✅</span>}
+                      </p>
+                      {geoPermission !== 'granted' && (
+                        <Button type="button" size="sm" variant="outline" onClick={handleActivateLocation}>
+                          📍 Activar ubicación
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {activityRequiresLocation && geoPermission === 'denied' && (
+                    <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+                      <p className="font-medium text-amber-400">📍 La ubicación está bloqueada para el CRM en este dispositivo.</p>
+                      <p className="mt-1 text-(--muted-fg-2)">Para registrar esta actividad debes permitirla:</p>
+                      {isIOS ? (
+                        <ol className="mt-1 list-decimal space-y-0.5 pl-4 text-(--muted-fg-2)">
+                          <li>Toca <strong>"AA"</strong> (o el ícono de ajustes) en la barra de dirección de Safari</li>
+                          <li>Entra a <strong>Configuración del sitio web</strong></li>
+                          <li>En <strong>Ubicación</strong> elige <strong>Permitir</strong></li>
+                        </ol>
+                      ) : isAndroid ? (
+                        <ol className="mt-1 list-decimal space-y-0.5 pl-4 text-(--muted-fg-2)">
+                          <li>Toca el <strong>candado 🔒</strong> al lado de la dirección</li>
+                          <li>Entra a <strong>Permisos</strong></li>
+                          <li>En <strong>Ubicación</strong> elige <strong>Permitir</strong></li>
+                        </ol>
+                      ) : (
+                        <ol className="mt-1 list-decimal space-y-0.5 pl-4 text-(--muted-fg-2)">
+                          <li>Haz clic en el <strong>candado 🔒</strong> junto a la dirección del navegador</li>
+                          <li>Busca <strong>Ubicación</strong> y cámbiala a <strong>Permitir</strong></li>
+                          <li>Recarga la página si el navegador lo pide</li>
+                        </ol>
+                      )}
+                      <div className="mt-2">
+                        <Button type="button" size="sm" variant="outline" onClick={handleActivateLocation}>
+                          Ya lo activé, reintentar
+                        </Button>
+                      </div>
+                    </div>
                   )}
                   {activityType === 'QUOTE_SENT' && (
                     <div className="rounded-md border border-dashed border-[var(--input-border)] bg-[var(--input-bg)] p-3">
