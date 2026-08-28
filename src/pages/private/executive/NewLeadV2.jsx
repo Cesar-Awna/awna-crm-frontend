@@ -216,7 +216,13 @@ const NewLeadV2 = () => {
       }
     };
 
-    load().catch(() => {});
+    load().catch((e) => {
+      // Si falla la carga inicial (sesión vencida, red, servidor), no dejar la pantalla en "Cargando lead…"
+      if (cancelled) return;
+      setInitialLoading(false);
+      setSchemaLoading(false);
+      setError(e?.response?.data?.message || e?.message || 'No se pudo cargar el lead. Recarga la página o vuelve a iniciar sesión.');
+    });
     return () => { cancelled = true; };
   }, [leadId, activeBuId]);
 
