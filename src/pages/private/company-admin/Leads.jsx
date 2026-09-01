@@ -17,6 +17,15 @@ import { getStoredSession } from '../../../lib/session.js';
 import DateRangePicker from '../../../components/DateRangePicker.jsx';
 import { fetchHitosColumn } from '../../../utils/hitosExport.js';
 
+// Excel en español (Chile) espera coma decimal: "2.8" -> "2,8".
+// Solo convierte decimales simples con un punto; deja intactos enteros,
+// valores con coma, o con separadores de miles ("1.000.000").
+const decimalConComa = (v) => {
+  if (v === undefined || v === null || v === '') return '—';
+  const s = String(v).trim();
+  return /^\d+\.\d+$/.test(s) ? s.replace('.', ',') : s;
+};
+
 const FIELD_ALIASES = {
   rutEmpresa:     ['rut'],
   nombreContacto: ['nombre', 'contactName'],
@@ -495,7 +504,7 @@ const AdminLeads = () => {
         row['Estado']          = getStatusLabel(lead.status) || lead.status || '—';
         row['Ingreso']               = formatDate(lead.createdAt);
         row['Fecha de cierre']       = lead.closedAt ? formatDate(lead.closedAt) : '—';
-        row['Valor esperado']        = lead.fields?.valorEsperado || '—';
+        row['Valor esperado']        = decimalConComa(lead.fields?.valorEsperado);
         row['Moneda']                = lead.fields?.monedaValorEsperado || '—';
         row['Llamadas realizadas']   = lead.callCount ?? 0;
         row['Contactos efectivos']   = lead.contactSuccessCount ?? 0;

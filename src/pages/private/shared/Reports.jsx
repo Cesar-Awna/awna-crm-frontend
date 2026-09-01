@@ -11,6 +11,15 @@ import PaginationControls from '../../../components/PaginationControls.jsx';
 import { exportCSV } from '../../../utils/exportCSV.js';
 import { fetchHitosColumn } from '../../../utils/hitosExport.js';
 
+// Excel en español (Chile) espera coma decimal: "2.8" -> "2,8".
+// Solo convierte decimales simples con un punto; deja intactos enteros,
+// valores con coma, o con separadores de miles ("1.000.000").
+const decimalConComa = (v) => {
+  if (v === undefined || v === null || v === '') return '—';
+  const s = String(v).trim();
+  return /^\d+\.\d+$/.test(s) ? s.replace('.', ',') : s;
+};
+
 const STATUS_COLORS = {
   NUEVO: '#38bdf8',
   DATO_ERRADO: '#f87171',
@@ -199,7 +208,7 @@ const Reports = () => {
         'Email': f(lead, 'contactEmail'),
         'Teléfono': f(lead, 'contactPhone'),
         'Producto cotizado': lead.fields?.productoCotizado || '—',
-        'Valor esperado': lead.fields?.valorEsperado || '—',
+        'Valor esperado': decimalConComa(lead.fields?.valorEsperado),
         'Moneda': lead.fields?.monedaValorEsperado || '—',
         'Segmentación': lead.fields?.segmentacion || '—',
         'Fuente de lead': lead.fields?.fuenteLead || '—',
