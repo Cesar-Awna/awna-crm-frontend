@@ -174,6 +174,7 @@ const Leads = () => {
       const row = {};
       cols.forEach((col) => { row[col.label] = getLeadField(lead, col.key); });
       row['Fuente de lead']  = getLeadField(lead, 'fuenteLead');
+      row['Tipo de contrato'] = getLeadField(lead, 'tipoContrato');
       row['Estado']          = getStatusLabel(lead.status) || lead.status || '—';
       row['Ingreso']         = formatDate(lead.createdAt);
       row['Fecha de cierre'] = lead.closedAt ? formatDate(lead.closedAt) : '—';

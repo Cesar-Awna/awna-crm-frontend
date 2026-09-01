@@ -210,6 +210,7 @@ const Reports = () => {
         'Producto cotizado': lead.fields?.productoCotizado || '—',
         'Valor esperado': decimalConComa(lead.fields?.valorEsperado),
         'Moneda': lead.fields?.monedaValorEsperado || '—',
+        'Tipo de contrato': lead.fields?.tipoContrato || '—',
         'Segmentación': lead.fields?.segmentacion || '—',
         'Fuente de lead': lead.fields?.fuenteLead || '—',
         'Estado': lead.status || '—',

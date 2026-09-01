@@ -506,6 +506,7 @@ const AdminLeads = () => {
         row['Fecha de cierre']       = lead.closedAt ? formatDate(lead.closedAt) : '—';
         row['Valor esperado']        = decimalConComa(lead.fields?.valorEsperado);
         row['Moneda']                = lead.fields?.monedaValorEsperado || '—';
+        row['Tipo de contrato']      = lead.fields?.tipoContrato || '—';
         row['Llamadas realizadas']   = lead.callCount ?? 0;
         row['Contactos efectivos']   = lead.contactSuccessCount ?? 0;
         row['Seguimientos']          = lead.followupCount ?? 0;
