@@ -9,6 +9,10 @@ import { LEAD_STATUSES, getStatusLabel } from '../../../lib/leadFormMappers.js';
 
 const STATUS_COLORS = {
   NUEVO: '#38bdf8',
+  CARTERIZADO: '#818cf8',
+  GENERACION_CONTRATO: '#2dd4bf',
+  REVISION_ONBOARDING: '#4ade80',
+  APROBADO_DEFINITIVO: '#10b981',
   DATO_ERRADO: '#f87171',
   CONTACTADO: '#60a5fa',
   INTERESADO: '#a78bfa',

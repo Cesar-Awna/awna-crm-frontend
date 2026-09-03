@@ -10,6 +10,7 @@ import useBUSchema from '../../../hooks/useBUSchema.js';
 // Fallback color palette — used when a stage/activity key has no color in the schema
 const FALLBACK_STATUS_COLORS = {
   NUEVO: '#38bdf8', DATO_ERRADO: '#f87171', CONTACTADO: '#60a5fa',
+  CARTERIZADO: '#818cf8', GENERACION_CONTRATO: '#2dd4bf', REVISION_ONBOARDING: '#4ade80', APROBADO_DEFINITIVO: '#10b981',
   INTERESADO: '#a78bfa', COTIZACION_ENVIADA: '#fbbf24', EN_SEGUIMIENTO: '#f97316',
   CERRADO_GANADO: '#10b981', CLIENTE: '#059669', CERRADO_PERDIDO: '#ef4444',
   NO_INTERESADO: '#fb7185',

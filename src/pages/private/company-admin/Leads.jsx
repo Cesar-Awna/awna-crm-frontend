@@ -44,6 +44,10 @@ const getLeadField = (lead, key) => {
 
 const STATUS_BADGE = {
   NUEVO: 'bg-sky-500/20 text-sky-300',
+  CARTERIZADO: 'bg-indigo-500/20 text-indigo-300',
+  GENERACION_CONTRATO: 'bg-teal-500/20 text-teal-300',
+  REVISION_ONBOARDING: 'bg-green-500/20 text-green-300',
+  APROBADO_DEFINITIVO: 'bg-emerald-500/20 text-emerald-300',
   DATO_ERRADO: 'bg-red-500/20 text-red-300',
   CONTACTADO: 'bg-blue-500/20 text-blue-300',
   INTERESADO: 'bg-violet-500/20 text-violet-300',

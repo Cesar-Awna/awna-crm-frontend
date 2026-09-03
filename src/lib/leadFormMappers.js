@@ -39,6 +39,10 @@ export const LEAD_STATUSES = [
   { value: 'CLIENTE',            label: 'Cliente' },
   { value: 'CERRADO_PERDIDO',    label: 'Cerrado perdido' },
   { value: 'NO_INTERESADO',      label: 'No interesado' },
+  { value: 'CARTERIZADO',        label: 'Carterizado' },
+  { value: 'GENERACION_CONTRATO', label: 'Generación de contrato' },
+  { value: 'REVISION_ONBOARDING', label: 'Revisión de onboarding Equifax' },
+  { value: 'APROBADO_DEFINITIVO', label: 'Aprobado definitivo' },
 ];
 
 export const LEAD_STATUS_VALUES = LEAD_STATUSES.map((s) => s.value);
