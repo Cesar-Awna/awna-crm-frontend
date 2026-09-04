@@ -425,7 +425,13 @@ const NewLeadV2 = () => {
         ) : schema.length > 0 ? (
           /* Status se inyecta dentro de la misma grilla, antes de los textareas */
           <DynamicLeadForm
-            schema={schema}
+            schema={
+              /* Getnet: el origen se fuerza a "Puerta a puerta" al crear manual,
+                 así que se oculta del formulario del ejecutivo */
+              (!isEdit && me?.role === 'EXECUTIVE')
+                ? schema.filter((fld) => fld.key !== 'origen')
+                : schema
+            }
             values={f}
             onChange={setField}
             extraFields={statusSelect}
