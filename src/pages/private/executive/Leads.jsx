@@ -52,7 +52,7 @@ const Leads = () => {
   const [search, setSearch] = useState('');
   const [buSchema, setBuSchema] = useState([]);
   const [pipelineStages, setPipelineStages] = useState([]);
-  const [leadStats, setLeadStats] = useState({ openCount: 0, wonCount: 0, lostCount: 0, invalidCount: 0 });
+  const [leadStats, setLeadStats] = useState({ openCount: 0, wonCount: 0, lostCount: 0, invalidCount: 0, byStatus: {} });
 
   // When a SUPERVISOR lands on /mis-leads, scope leads to their own userId
   const _session = getStoredSession();
@@ -99,6 +99,7 @@ const Leads = () => {
             wonCount: statsRes.data.wonCount || 0,
             lostCount: statsRes.data.lostCount || 0,
             invalidCount: statsRes.data.invalidCount || 0,
+            byStatus: statsRes.data.byStatus || {},
           });
         }
       } catch (e) {
@@ -165,6 +166,8 @@ const Leads = () => {
   const cardFields = inlineFields.length > 0 ? inlineFields.slice(0, 3) : null;
 
   const getLeadsByStatus = (status) => filteredLeads.filter((l) => l.status === status);
+  // Conteo real desde el servidor (no limitado por el tope de 1000 que se trae para las tarjetas)
+  const statusCount = (status) => leadStats.byStatus?.[status] ?? getLeadsByStatus(status).length;
 
   const handleExportCSV = async () => {
     const hitos = await fetchHitosColumn(filteredLeads);
@@ -229,14 +232,22 @@ const Leads = () => {
           {stages
             .filter((s) => !closedKeys.includes(s.value))
             .map((s) => (
-              <Card key={s.value}>
+              <Card
+                key={s.value}
+                role="button"
+                tabIndex={0}
+                onClick={() => setFilterStatus(filterStatus === s.value ? '' : s.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setFilterStatus(filterStatus === s.value ? '' : s.value); }}
+                className={`cursor-pointer transition-colors hover:border-emerald-500/40 ${filterStatus === s.value ? 'ring-1 ring-emerald-500' : ''}`}
+                title={`Ver leads en ${s.label}`}
+              >
                 <CardContent
                   className="border-l-[3px] pt-4 text-center"
                   style={{ borderLeftColor: `${s.color}99` }}
                 >
                   <p className="text-xs uppercase text-(--muted-fg)">{s.label}</p>
                   <p className="text-2xl font-semibold tabular-nums tracking-tight text-(--input-fg)">
-                    {getLeadsByStatus(s.value).length}
+                    {statusCount(s.value)}
                   </p>
                 </CardContent>
               </Card>
@@ -344,13 +355,21 @@ const Leads = () => {
           <div className="flex gap-4 overflow-x-auto pb-4">
             {stages.map((s) => {
               const statusLeads = getLeadsByStatus(s.value);
+              const total = statusCount(s.value);
               const accent = s.color || STATUS_COLORS[s.value] || '#94a3b8';
               return (
                 <div
                   key={s.value}
                   className="flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--panel-bg)]"
                 >
-                  <div className="flex items-center gap-2.5 border-b border-[var(--border-color)] bg-[var(--input-bg)] px-3 py-2.5">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setFilterStatus(filterStatus === s.value ? '' : s.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setFilterStatus(filterStatus === s.value ? '' : s.value); }}
+                    title={`Ver todos los leads en ${s.label}`}
+                    className={`flex cursor-pointer items-center gap-2.5 border-b border-[var(--border-color)] bg-[var(--input-bg)] px-3 py-2.5 hover:bg-[var(--hover-bg)] ${filterStatus === s.value ? 'ring-1 ring-inset ring-emerald-500' : ''}`}
+                  >
                     <span
                       className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-[var(--border-color)]"
                       style={{ backgroundColor: accent }}
@@ -358,14 +377,24 @@ const Leads = () => {
                     />
                     <div className="min-w-0 flex-1 text-sm font-medium text-[var(--input-fg)]">
                       <span className="truncate">{s.label}</span>{' '}
-                      <span className="font-normal text-[var(--muted-fg)]">({statusLeads.length})</span>
+                      <span className="font-normal text-[var(--muted-fg)]">({total})</span>
                     </div>
                   </div>
                   <div className="min-h-[200px] space-y-2 p-2">
                     {statusLeads.length === 0 ? (
-                      <p className="py-4 text-center text-xs text-[var(--muted-fg)]">
-                        Sin leads
-                      </p>
+                      total > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => setFilterStatus(s.value)}
+                          className="w-full py-4 text-center text-xs text-emerald-500 hover:underline"
+                        >
+                          {total} leads · haz clic para verlos
+                        </button>
+                      ) : (
+                        <p className="py-4 text-center text-xs text-[var(--muted-fg)]">
+                          Sin leads
+                        </p>
+                      )
                     ) : (
                       statusLeads.map((lead) => (
                         <div
