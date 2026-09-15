@@ -12,6 +12,7 @@ import DynamicLeadForm from '../../../components/DynamicLeadForm.jsx';
 import { FloatingAlert } from '../../../components/ui/floating-alert.jsx';
 import { getStoredSession } from '../../../lib/session.js';
 import { useBU } from '../../../contexts/BUContext.jsx';
+import { validarRut, formatearRut } from '../../../utils/rut.js';
 import {
   buildLeadPayload,
   mapApiLeadToFormState,
@@ -117,6 +118,7 @@ const NewLeadV2 = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(!!isEdit);
   const [f, setF] = useState(legacyEmptyForm);
+  const [rutError, setRutError] = useState('');
 
   const [schema, setSchema] = useState([]);
   const [buActivityTypes, setBuActivityTypes] = useState([]);
@@ -226,7 +228,17 @@ const NewLeadV2 = () => {
     return () => { cancelled = true; };
   }, [leadId, activeBuId]);
 
-  const setField = (k, v) => setF((p) => ({ ...p, [k]: v }));
+  const setField = (k, v) => {
+    // Getnet, solo creación: el campo 'rut' se formatea en vivo (12.345.678-9)
+    // y se valida el dígito verificador para avisar debajo del campo.
+    if (k === 'rut' && !isEdit) {
+      const fmt = formatearRut(v);
+      setRutError(fmt && !validarRut(fmt) ? 'RUT inválido' : '');
+      setF((p) => ({ ...p, rut: fmt }));
+      return;
+    }
+    setF((p) => ({ ...p, [k]: v }));
+  };
 
   const handleDeleteLead = async () => {
     setDeleteLoading(true);
@@ -262,6 +274,15 @@ const NewLeadV2 = () => {
       if (!f.contactName?.trim()) return setError('Nombre del Contacto es obligatorio.');
       if (f.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.contactEmail.trim())) {
         return setError('Correo inválido.');
+      }
+    }
+
+    // RUT válido (Getnet, solo creación): bloquea si el dígito verificador no calza
+    if (!isEdit && schema.some((fld) => fld.key === 'rut')) {
+      const rutVal = (f.rut || '').trim();
+      if (rutVal && !validarRut(rutVal)) {
+        setRutError('RUT inválido');
+        return setError('Corrige el RUT antes de continuar.');
       }
     }
 
@@ -435,6 +456,7 @@ const NewLeadV2 = () => {
             values={f}
             onChange={setField}
             extraFields={statusSelect}
+            errors={{ rut: rutError }}
           />
         ) : (
           /* Fallback legacy para BUs sin esquema definido */

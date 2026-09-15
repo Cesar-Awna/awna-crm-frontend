@@ -6,7 +6,7 @@ import DynamicField from './DynamicField.jsx';
  * Non-textarea fields come first, then `extraFields` (injected inline),
  * then textarea fields (which span full width).
  */
-const DynamicLeadForm = ({ schema = [], values = {}, onChange, disabled = false, extraFields = null }) => {
+const DynamicLeadForm = ({ schema = [], values = {}, onChange, disabled = false, extraFields = null, errors = {} }) => {
   const sorted = [...schema].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   if (!sorted.length) {
@@ -29,6 +29,7 @@ const DynamicLeadForm = ({ schema = [], values = {}, onChange, disabled = false,
           value={values[field.key] ?? ''}
           onChange={(val) => onChange(field.key, val)}
           disabled={disabled}
+          error={errors[field.key] || ''}
         />
       ))}
       {extraFields}

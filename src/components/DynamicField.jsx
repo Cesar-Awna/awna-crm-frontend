@@ -7,7 +7,7 @@ const requiredMark = <span className="ml-0.5 text-red-400">*</span>;
 const baseClass =
   'w-full rounded-md border border-[var(--border-color)] bg-[var(--input-bg)] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:opacity-50';
 
-const DynamicField = ({ field, value, onChange, disabled = false }) => {
+const DynamicField = ({ field, value, onChange, disabled = false, error = '' }) => {
   const { key, label, type, required, options, placeholder } = field;
 
   if (type === 'multiselect') {
@@ -97,7 +97,9 @@ const DynamicField = ({ field, value, onChange, disabled = false }) => {
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         placeholder={placeholder || ''}
+        className={error ? 'border-red-500 focus:ring-red-500' : ''}
       />
+      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
     </div>
   );
 };
