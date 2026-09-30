@@ -574,7 +574,7 @@ const NewLeadV2 = () => {
                     {me?.role === 'SUPERVISOR' && (
                       <option value={String(me?.user?._id)}>Yo mismo</option>
                     )}
-                    {executives.map((u) => (
+                    {executives.filter((u) => u.isActive !== false).map((u) => (
                       <option key={u._id} value={u._id}>{u.fullName}</option>
                     ))}
                   </select>

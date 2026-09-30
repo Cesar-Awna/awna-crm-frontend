@@ -313,7 +313,7 @@ const Reports = () => {
                     className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                   >
                     <option value="">Todos los ejecutivos</option>
-                    {executives.map((e) => (
+                    {executives.filter((e) => e.isActive !== false).map((e) => (
                       <option key={e._id} value={e._id}>
                         {e.fullName}
                       </option>
@@ -569,7 +569,7 @@ const Reports = () => {
                     className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-50"
                   >
                     <option value="">Todos los ejecutivos</option>
-                    {executives.map((e) => (
+                    {executives.filter((e) => e.isActive !== false).map((e) => (
                       <option key={e._id} value={e._id}>
                         {e.fullName}
                       </option>

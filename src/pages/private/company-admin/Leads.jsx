@@ -458,12 +458,14 @@ const AdminLeads = () => {
     return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  const executives = leadFilters.businessUnitId
+  // Para los dropdowns: solo ejecutivos ACTIVOS (el nombre en la tabla usa `users` completo)
+  const executives = (leadFilters.businessUnitId
     ? users.filter((u) => {
         const buIds = (u.businessUnitIds?.length ? u.businessUnitIds : [u.businessUnitId]).filter(Boolean).map(String);
         return buIds.includes(leadFilters.businessUnitId);
       })
-    : users;
+    : users
+  ).filter((u) => u.isActive !== false);
   const dynCols = activeBuSchema.filter((f) => f.type !== 'textarea').slice(0, 4);
 
   const handleExportCSV = async () => {
@@ -699,7 +701,7 @@ const AdminLeads = () => {
               onChange={(e) => setBulkAssignUserId(e.target.value)}
             >
               <option value="">Asignar a...</option>
-              {users.map((u) => (
+              {executives.map((u) => (
                 <option key={u._id} value={u._id}>{u.fullName}</option>
               ))}
             </select>
