@@ -49,9 +49,12 @@ const Leads = () => {
   const [filterFuente, setFilterFuente] = useState('');
   const [filterProducto, setFilterProducto] = useState('');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [activityRange, setActivityRange] = useState({ from: '', to: '' });
+  const [activityType, setActivityType] = useState('');
   const [search, setSearch] = useState('');
   const [buSchema, setBuSchema] = useState([]);
   const [pipelineStages, setPipelineStages] = useState([]);
+  const [buActivityTypes, setBuActivityTypes] = useState([]);
   const [leadStats, setLeadStats] = useState({ openCount: 0, wonCount: 0, lostCount: 0, invalidCount: 0, byStatus: {} });
 
   // When a SUPERVISOR lands on /mis-leads, scope leads to their own userId
@@ -69,6 +72,7 @@ const Leads = () => {
         if (res?.success && res.data) {
           setBuSchema(res.data.leadSchema || []);
           setPipelineStages(res.data.pipelineStages || []);
+          setBuActivityTypes(res.data.activityTypes || []);
         }
       } catch {
         // fallback to defaults
@@ -86,6 +90,12 @@ const Leads = () => {
         if (filterProducto) params.productoCotizado = filterProducto;
         if (dateRange.from) params.createdAtFrom = dateRange.from;
         if (dateRange.to) params.createdAtTo = dateRange.to;
+        // Fecha de actividad: límites del día en hora local del navegador (DST-safe)
+        if (activityRange.from) {
+          params.activityFrom = new Date(activityRange.from + 'T00:00:00').toISOString();
+          params.activityTo = new Date((activityRange.to || activityRange.from) + 'T23:59:59.999').toISOString();
+          if (activityType) params.activityType = activityType;
+        }
         if (_ownerUserId) params.ownerUserId = _ownerUserId;
         const [leadsRes, statsRes] = await Promise.all([
           LeadsService.getAll(params),
@@ -109,7 +119,7 @@ const Leads = () => {
       }
     };
     loadData();
-  }, [filterStatus, filterFuente, filterProducto, dateRange]);
+  }, [filterStatus, filterFuente, filterProducto, dateRange, activityRange, activityType]);
 
   const handleChangeStatus = async (leadId, newStatus) => {
     try {
@@ -150,13 +160,15 @@ const Leads = () => {
   // Filter options from the BU schema (includes dynamic values like "Base Equifax")
   const fuenteOptions = buSchema.find((f) => f.key === 'fuenteLead')?.options || [];
   const productoOptions = buSchema.find((f) => f.key === 'productoCotizado')?.options || [];
-  const hasActiveFilters = filterStatus || filterFuente || filterProducto || dateRange.from || search;
+  const hasActiveFilters = filterStatus || filterFuente || filterProducto || dateRange.from || activityRange.from || search;
 
   const handleClearFilters = () => {
     setFilterStatus('');
     setFilterFuente('');
     setFilterProducto('');
     setDateRange({ from: '', to: '' });
+    setActivityRange({ from: '', to: '' });
+    setActivityType('');
     setSearch('');
   };
 
@@ -283,6 +295,25 @@ const Leads = () => {
             onChange={setDateRange}
             placeholder="Todas las fechas de ingreso"
           />
+
+          <DateRangePicker
+            value={activityRange}
+            onChange={setActivityRange}
+            placeholder="Fecha de actividad (trabajados)"
+          />
+
+          {activityRange.from && buActivityTypes.length > 0 && (
+            <select
+              value={activityType}
+              onChange={(e) => setActivityType(e.target.value)}
+              className="rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--input-fg)]"
+            >
+              <option value="">Cualquier actividad</option>
+              {buActivityTypes.map((a) => (
+                <option key={a.key} value={a.key}>{a.label}</option>
+              ))}
+            </select>
+          )}
 
           <select
             value={filterStatus}
